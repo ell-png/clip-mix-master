@@ -2,9 +2,17 @@ import React, { useState, useCallback, useEffect } from 'react';
 import VideoUploader from '@/components/VideoUploader';
 import Timeline from '@/components/Timeline';
 import { Button } from '@/components/ui/button';
-import { Play, Download } from 'lucide-react';
+import { Play, Download, StopCircle, PauseCircle, Edit2, Edit3 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface VideoSelection {
   hook: File | null;
@@ -36,9 +44,12 @@ const Index = () => {
   const [combinations, setCombinations] = useState<Combination[]>([]);
   const [exportProgress, setExportProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentExportIndex, setCurrentExportIndex] = useState(0);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ section: string; index: number } | null>(null);
+  const [newFileName, setNewFileName] = useState('');
 
-  // Generate all possible combinations when clips are added
   const generateCombinations = useCallback(() => {
     const newCombinations: Combination[] = [];
     sections.hook.forEach(hook => {
@@ -71,7 +82,27 @@ const Index = () => {
     });
   }, [toast]);
 
+  const stopExport = useCallback(() => {
+    setIsExporting(false);
+    setExportProgress(0);
+    setCurrentExportIndex(0);
+    toast({
+      title: "Export stopped",
+      description: "Video export process has been stopped",
+    });
+  }, [toast]);
+
+  const togglePause = useCallback(() => {
+    setIsPaused(!isPaused);
+    toast({
+      title: isPaused ? "Export resumed" : "Export paused",
+      description: isPaused ? "Continuing video export" : "Video export has been paused",
+    });
+  }, [isPaused, toast]);
+
   const exportCombination = useCallback((combination: Combination, index: number) => {
+    if (isPaused) return;
+
     setCurrentCombination({
       hook: combination.hook,
       sellingPoint: combination.sellingPoint,
@@ -81,6 +112,11 @@ const Index = () => {
     // Simulate export progress for this combination
     let progress = 0;
     const interval = setInterval(() => {
+      if (isPaused) {
+        clearInterval(interval);
+        return;
+      }
+
       progress += 10;
       if (progress <= 100) {
         setExportProgress(progress);
@@ -102,7 +138,54 @@ const Index = () => {
         }
       }
     }, 500);
-  }, [combinations.length, toast]);
+  }, [combinations.length, isPaused, toast]);
+
+  const handleRename = useCallback((section: string, index: number) => {
+    setRenameTarget({ section, index });
+    setNewFileName('');
+    setIsRenameDialogOpen(true);
+  }, []);
+
+  const handleRenameAll = useCallback(() => {
+    setSections(prev => {
+      const newSections = { ...prev };
+      Object.keys(newSections).forEach(section => {
+        newSections[section as keyof typeof sections] = newSections[section as keyof typeof sections].map((file: File, index: number) => {
+          const newFile = new File([file], `${section}_${index + 1}${file.name.substring(file.name.lastIndexOf('.'))}`, {
+            type: file.type,
+          });
+          return newFile;
+        });
+      });
+      return newSections;
+    });
+    toast({
+      title: "Files renamed",
+      description: "All files have been renamed with sequential numbers",
+    });
+  }, [toast]);
+
+  const confirmRename = useCallback(() => {
+    if (!renameTarget || !newFileName) return;
+
+    setSections(prev => {
+      const newSections = { ...prev };
+      const file = newSections[renameTarget.section as keyof typeof sections][renameTarget.index];
+      const newFile = new File([file], `${newFileName}${file.name.substring(file.name.lastIndexOf('.'))}`, {
+        type: file.type,
+      });
+      newSections[renameTarget.section as keyof typeof sections][renameTarget.index] = newFile;
+      return newSections;
+    });
+
+    setIsRenameDialogOpen(false);
+    setRenameTarget(null);
+    setNewFileName('');
+    toast({
+      title: "File renamed",
+      description: "The file has been successfully renamed",
+    });
+  }, [renameTarget, newFileName, toast]);
 
   const startExport = useCallback(() => {
     if (combinations.length === 0) {
@@ -135,45 +218,32 @@ const Index = () => {
         <h1 className="text-3xl font-bold mb-8">Video Editor</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <div>
-            <h2 className="text-xl mb-4">Hook ({sections.hook.length} clips)</h2>
-            <VideoUploader section="hook" onUpload={(file) => handleUpload('hook', file)} />
-            {sections.hook.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {sections.hook.map((file, index) => (
-                  <div key={index} className="text-sm text-editor-muted truncate">
-                    {file.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <h2 className="text-xl mb-4">Selling Point ({sections.sellingPoint.length} clips)</h2>
-            <VideoUploader section="selling-point" onUpload={(file) => handleUpload('sellingPoint', file)} />
-            {sections.sellingPoint.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {sections.sellingPoint.map((file, index) => (
-                  <div key={index} className="text-sm text-editor-muted truncate">
-                    {file.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <h2 className="text-xl mb-4">CTA ({sections.cta.length} clips)</h2>
-            <VideoUploader section="cta" onUpload={(file) => handleUpload('cta', file)} />
-            {sections.cta.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {sections.cta.map((file, index) => (
-                  <div key={index} className="text-sm text-editor-muted truncate">
-                    {file.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {Object.entries(sections).map(([section, files]) => (
+            <div key={section}>
+              <h2 className="text-xl mb-4">{section} ({files.length} clips)</h2>
+              <VideoUploader 
+                section={section as 'hook' | 'selling-point' | 'cta'} 
+                onUpload={(file) => handleUpload(section as keyof typeof sections, file)} 
+              />
+              {files.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm text-editor-muted">
+                      <span className="truncate flex-1">{file.name}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRename(section, index)}
+                        className="ml-2"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="mb-8">
@@ -208,16 +278,59 @@ const Index = () => {
             </div>
           </div>
           
-          <Button
-            onClick={startExport}
-            disabled={isExporting || combinations.length === 0}
-            className="bg-editor-highlight hover:bg-editor-highlight/90 text-white"
-          >
-            <Play className="mr-2 h-4 w-4" />
-            Export All Combinations
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={startExport}
+              disabled={isExporting || combinations.length === 0}
+              className="bg-editor-highlight hover:bg-editor-highlight/90 text-white"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              Export All Combinations
+            </Button>
+
+            {isExporting && (
+              <>
+                <Button onClick={togglePause} variant="outline">
+                  <PauseCircle className="mr-2 h-4 w-4" />
+                  {isPaused ? 'Resume' : 'Pause'}
+                </Button>
+                <Button onClick={stopExport} variant="destructive">
+                  <StopCircle className="mr-2 h-4 w-4" />
+                  Stop Export
+                </Button>
+              </>
+            )}
+
+            <Button onClick={handleRenameAll} variant="outline">
+              <Edit3 className="mr-2 h-4 w-4" />
+              Rename All
+            </Button>
+          </div>
         </div>
       </div>
+
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              placeholder="Enter new file name"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmRename}>
+              Rename
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
