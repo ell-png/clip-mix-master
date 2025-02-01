@@ -8,7 +8,7 @@ interface SectionManagerProps {
   sectionOrder: string[];
   draggedSection: number | null;
   onUpload: (section: string, file: File) => void;
-  onRename: (section: string, index: number) => void;
+  onRename: (section: string, index: number, newName: string) => void;
   onDelete: (section: string, index: number) => void;
   onAddSectionClick: () => void;
   onDeleteSection: (section: string) => void;
