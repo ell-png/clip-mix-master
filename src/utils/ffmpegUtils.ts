@@ -69,6 +69,7 @@ export const concatenateVideos = async (
       '-f', 'concat',
       '-safe', '0',
       '-i', 'concat.txt',
+      '-progress', 'pipe:1',  // Enable progress output
       ...qualitySettings[options.quality].split(' '),
       ...speedSettings[options.speed].split(' '),
       'output.mp4'
