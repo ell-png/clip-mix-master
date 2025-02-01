@@ -26,10 +26,10 @@ const ExportProgress = ({
     return `${minutes}m ${remainingSeconds}s`;
   };
 
-  const getEstimatedDownloadTime = () => {
+  const getEstimatedTime = () => {
     if (timeRemaining === null) return 'Calculating...';
-    if (timeRemaining <= 0) return 'Download starting soon...';
-    return `Download begins in ${formatTimeRemaining(timeRemaining)}`;
+    if (timeRemaining <= 0) return 'Almost done...';
+    return `Estimated time remaining: ${formatTimeRemaining(timeRemaining)}`;
   };
 
   return (
@@ -44,7 +44,7 @@ const ExportProgress = ({
         </p>
         <div className="flex items-center text-sm text-editor-highlight">
           <Clock className="w-4 h-4 mr-2" />
-          <p>{getEstimatedDownloadTime()}</p>
+          <p>{getEstimatedTime()}</p>
         </div>
       </div>
     </div>
