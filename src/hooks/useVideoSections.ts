@@ -86,6 +86,20 @@ export const useVideoSections = () => {
     });
   }, [toast]);
 
+  const renameSection = useCallback((oldName: string, newName: string) => {
+    setSections(prev => {
+      const newSections = { ...prev };
+      newSections[newName] = prev[oldName];
+      delete newSections[oldName];
+      return newSections;
+    });
+    setSectionOrder(prev => prev.map(section => section === oldName ? newName : section));
+    toast({
+      title: "Section renamed",
+      description: `Renamed from ${oldName} to ${newName}`,
+    });
+  }, [toast]);
+
   return {
     sections,
     sectionOrder,
@@ -94,6 +108,7 @@ export const useVideoSections = () => {
     handleDelete,
     addSection,
     deleteSection,
-    reorderSections
+    reorderSections,
+    renameSection
   };
 };

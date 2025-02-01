@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Minus, GripVertical } from 'lucide-react';
+import { Plus, Minus, GripVertical, Edit } from 'lucide-react';
 import VideoSection from '@/components/VideoSection';
 import ExportControls from '@/components/ExportControls';
 import CombinationsList from '@/components/CombinationsList';
@@ -33,6 +33,8 @@ const Index = () => {
   const [newSectionName, setNewSectionName] = useState('');
   const [isAddSectionDialogOpen, setIsAddSectionDialogOpen] = useState(false);
   const [draggedSection, setDraggedSection] = useState<number | null>(null);
+  const [isSectionRenameDialogOpen, setIsSectionRenameDialogOpen] = useState(false);
+  const [sectionToRename, setSectionToRename] = useState<string | null>(null);
 
   const {
     sections,
@@ -42,7 +44,8 @@ const Index = () => {
     handleDelete,
     addSection,
     deleteSection,
-    reorderSections
+    reorderSections,
+    renameSection
   } = useVideoSections();
 
   const {
@@ -122,6 +125,21 @@ const Index = () => {
     setDraggedSection(null);
   };
 
+  const handleSectionRename = (section: string) => {
+    setSectionToRename(section);
+    setNewSectionName(section);
+    setIsSectionRenameDialogOpen(true);
+  };
+
+  const confirmSectionRename = () => {
+    if (sectionToRename && newSectionName) {
+      renameSection(sectionToRename, newSectionName);
+      setIsSectionRenameDialogOpen(false);
+      setSectionToRename(null);
+      setNewSectionName('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-editor-bg text-editor-text p-8">
       <div className="max-w-6xl mx-auto">
@@ -144,6 +162,13 @@ const Index = () => {
               className="relative group"
             >
               <div className="absolute -top-2 -right-2 flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSectionRename(section)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -231,6 +256,29 @@ const Index = () => {
             </Button>
             <Button onClick={handleAddSection}>
               Add Section
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSectionRenameDialogOpen} onOpenChange={setIsSectionRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Section</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newSectionName}
+              onChange={(e) => setNewSectionName(e.target.value)}
+              placeholder="Enter new section name"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSectionRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmSectionRename}>
+              Rename
             </Button>
           </DialogFooter>
         </DialogContent>
