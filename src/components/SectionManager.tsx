@@ -34,6 +34,13 @@ const SectionManager = ({
   onDragEnd,
   onMoveVideo
 }: SectionManagerProps) => {
+  const handleSectionDragStart = (e: React.DragEvent, index: number) => {
+    // Only start section drag if the drag started from the grip handle
+    if ((e.target as HTMLElement).closest('.section-grip')) {
+      onDragStart(index);
+    }
+  };
+
   return (
     <>
       <div className="flex justify-between items-center mb-8">
@@ -49,7 +56,7 @@ const SectionManager = ({
           <div 
             key={section}
             draggable
-            onDragStart={() => onDragStart(index)}
+            onDragStart={(e) => handleSectionDragStart(e, index)}
             onDragOver={(e) => onDragOver(e, index)}
             onDragEnd={onDragEnd}
             className="relative group"
@@ -71,7 +78,7 @@ const SectionManager = ({
                 <Minus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="cursor-move flex items-center justify-center absolute -top-2 -left-2 w-8 h-8 rounded-full bg-editor-surface opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="section-grip cursor-move flex items-center justify-center absolute -top-2 -left-2 w-8 h-8 rounded-full bg-editor-surface opacity-0 group-hover:opacity-100 transition-opacity">
               <GripVertical className="h-4 w-4" />
             </div>
             <VideoSection
