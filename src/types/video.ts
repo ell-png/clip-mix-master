@@ -21,4 +21,6 @@ export interface ExportProgress {
 export interface ExportOptions {
   quality: 'low' | 'medium' | 'high';
   speed: 'slow' | 'medium' | 'fast';
+  preset: string;
+  threads: number;
 }
