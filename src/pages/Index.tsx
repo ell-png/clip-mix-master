@@ -21,7 +21,10 @@ const Index = () => {
   const [combinations, setCombinations] = useState<Combination[]>([]);
   const [selectedCombinations, setSelectedCombinations] = useState<number[]>([]);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isAddSectionDialogOpen, setIsAddSectionDialogOpen] = useState(false);
+  const [isSectionRenameDialogOpen, setIsSectionRenameDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState('');
+  const [newSectionName, setNewSectionName] = useState('');
 
   const {
     sections,
@@ -127,6 +130,22 @@ const Index = () => {
     });
   };
 
+  const handleAddSection = () => {
+    if (newSectionName) {
+      addSection(newSectionName);
+      setNewSectionName('');
+      setIsAddSectionDialogOpen(false);
+    }
+  };
+
+  const handleSectionRename = (oldName: string, newName: string) => {
+    if (newName) {
+      renameSection(oldName, newName);
+      setNewSectionName('');
+      setIsSectionRenameDialogOpen(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-editor-bg text-editor-text p-8">
       <div className="max-w-6xl mx-auto">
@@ -134,11 +153,11 @@ const Index = () => {
           sections={sections}
           sectionOrder={sectionOrder}
           onUpload={handleUpload}
-          onRename={(section, index) => handleRename(section, index, '')}
+          onRename={handleRename}
           onDelete={handleDelete}
-          onAddSectionClick={() => {}}
+          onAddSectionClick={() => setIsAddSectionDialogOpen(true)}
           onDeleteSection={deleteSection}
-          onSectionRename={(oldName, newName) => renameSection(oldName, newName)}
+          onSectionRename={handleSectionRename}
           onMoveVideo={moveVideo}
         />
 
@@ -171,9 +190,17 @@ const Index = () => {
       <DialogManager
         isRenameDialogOpen={isRenameDialogOpen}
         setIsRenameDialogOpen={setIsRenameDialogOpen}
+        isAddSectionDialogOpen={isAddSectionDialogOpen}
+        setIsAddSectionDialogOpen={setIsAddSectionDialogOpen}
+        isSectionRenameDialogOpen={isSectionRenameDialogOpen}
+        setIsSectionRenameDialogOpen={setIsSectionRenameDialogOpen}
         newFileName={newFileName}
         setNewFileName={setNewFileName}
+        newSectionName={newSectionName}
+        setNewSectionName={setNewSectionName}
         onConfirmRename={confirmRenameAll}
+        onConfirmAddSection={handleAddSection}
+        onConfirmSectionRename={handleSectionRename}
       />
     </div>
   );
