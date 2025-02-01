@@ -58,7 +58,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     index: number,
     onCombinationExported: (combinations: VideoFile[]) => void
   ) => {
-    if (isPaused) return;
+    if (isPaused || !isExporting) return;
 
     try {
       console.log('Starting export for combination:', index + 1);
@@ -70,17 +70,11 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       });
 
       // Initialize FFmpeg if needed
-      let ffmpeg = ffmpegInstance;
-      if (!ffmpeg) {
-        console.log('No FFmpeg instance found, initializing...');
-        try {
-          ffmpeg = await initFFmpeg();
-          console.log('FFmpeg initialized successfully');
-          setFfmpegInstance(ffmpeg);
-        } catch (error) {
-          console.error('FFmpeg initialization failed:', error);
-          throw error;
-        }
+      if (!ffmpegInstance) {
+        console.log('Initializing FFmpeg...');
+        const instance = await initFFmpeg();
+        console.log('FFmpeg initialized successfully');
+        setFfmpegInstance(instance);
       }
 
       if (!exportProgress.startTime) {
@@ -96,7 +90,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
       console.log('Starting video concatenation process...');
       const blob = await concatenateVideos(
-        ffmpeg,
+        ffmpegInstance,
         combination.hook,
         combination.sellingPoint,
         combination.cta,
@@ -146,7 +140,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       });
       setIsExporting(false);
     }
-  }, [combinations.length, isPaused, toast, exportProgress.startTime, ffmpegInstance]);
+  }, [combinations.length, isPaused, isExporting, ffmpegInstance, toast, exportProgress.startTime]);
 
   const startExport = useCallback(async () => {
     if (combinations.length === 0) {
@@ -167,14 +161,9 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       // Initialize FFmpeg if needed
       if (!ffmpegInstance) {
         console.log('Initializing FFmpeg before export...');
-        try {
-          const instance = await initFFmpeg();
-          console.log('FFmpeg initialized successfully');
-          setFfmpegInstance(instance);
-        } catch (error) {
-          console.error('FFmpeg initialization failed:', error);
-          throw error;
-        }
+        const instance = await initFFmpeg();
+        console.log('FFmpeg initialized successfully');
+        setFfmpegInstance(instance);
       }
     } catch (error) {
       console.error('Export initialization error:', error);
@@ -193,6 +182,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       if (selectedCombination) {
         exportCombination(selectedCombination, currentExportIndex, (updatedCombinations) => {
           // Handle the updated combinations if needed
+          console.log('Combination exported successfully');
         });
       }
     }
