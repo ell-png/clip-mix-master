@@ -24,53 +24,73 @@ export const concatenateVideos = async (
   onProgress: (progress: number) => void,
   options: ExportOptions
 ) => {
-  await ffmpeg.writeFile('hook.mp4', await fetchFile(hook));
-  onProgress(20);
-  
-  await ffmpeg.writeFile('selling.mp4', await fetchFile(sellingPoint));
-  onProgress(30);
-  
-  await ffmpeg.writeFile('cta.mp4', await fetchFile(cta));
-  onProgress(40);
+  try {
+    console.log('Starting video concatenation...');
+    
+    // Write files to FFmpeg virtual filesystem
+    console.log('Writing hook video...');
+    await ffmpeg.writeFile('hook.mp4', await fetchFile(hook));
+    onProgress(20);
+    
+    console.log('Writing selling point video...');
+    await ffmpeg.writeFile('selling.mp4', await fetchFile(sellingPoint));
+    onProgress(40);
+    
+    console.log('Writing CTA video...');
+    await ffmpeg.writeFile('cta.mp4', await fetchFile(cta));
+    onProgress(60);
 
-  const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
-  await ffmpeg.writeFile('concat.txt', concat);
+    const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
+    await ffmpeg.writeFile('concat.txt', concat);
 
-  // Apply quality and speed settings based on options
-  const qualitySettings = {
-    low: '-crf 28',
-    medium: '-crf 23',
-    high: '-crf 18'
-  };
-  
-  const speedSettings = {
-    slow: '-preset veryslow',
-    medium: '-preset medium',
-    fast: '-preset veryfast'
-  };
+    // Apply quality and speed settings based on options
+    const qualitySettings = {
+      low: '-crf 28',
+      medium: '-crf 23',
+      high: '-crf 18'
+    };
+    
+    const speedSettings = {
+      slow: '-preset veryslow',
+      medium: '-preset medium',
+      fast: '-preset veryfast'
+    };
 
-  await ffmpeg.exec([
-    '-f', 'concat',
-    '-safe', '0',
-    '-i', 'concat.txt',
-    ...qualitySettings[options.quality].split(' '),
-    ...speedSettings[options.speed].split(' '),
-    'output.mp4'
-  ]);
-  onProgress(70);
-
-  const data = await ffmpeg.readFile('output.mp4');
-  const blob = new Blob([data], { type: 'video/mp4' });
-  
-  await cleanupFiles(ffmpeg);
-  
-  return blob;
+    console.log('Starting FFmpeg concatenation...');
+    await ffmpeg.exec([
+      '-f', 'concat',
+      '-safe', '0',
+      '-i', 'concat.txt',
+      ...qualitySettings[options.quality].split(' '),
+      ...speedSettings[options.speed].split(' '),
+      'output.mp4'
+    ]);
+    
+    console.log('Reading output file...');
+    const data = await ffmpeg.readFile('output.mp4');
+    onProgress(80);
+    
+    const blob = new Blob([data], { type: 'video/mp4' });
+    console.log('Video concatenation complete!');
+    
+    await cleanupFiles(ffmpeg);
+    onProgress(100);
+    
+    return blob;
+  } catch (error) {
+    console.error('Error in concatenateVideos:', error);
+    throw error;
+  }
 };
 
 const cleanupFiles = async (ffmpeg: FFmpeg) => {
-  await ffmpeg.deleteFile('hook.mp4');
-  await ffmpeg.deleteFile('selling.mp4');
-  await ffmpeg.deleteFile('cta.mp4');
-  await ffmpeg.deleteFile('concat.txt');
-  await ffmpeg.deleteFile('output.mp4');
+  try {
+    await ffmpeg.deleteFile('hook.mp4');
+    await ffmpeg.deleteFile('selling.mp4');
+    await ffmpeg.deleteFile('cta.mp4');
+    await ffmpeg.deleteFile('concat.txt');
+    await ffmpeg.deleteFile('output.mp4');
+  } catch (error) {
+    console.error('Error cleaning up files:', error);
+  }
 };

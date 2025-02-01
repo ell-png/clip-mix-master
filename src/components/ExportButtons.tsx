@@ -24,11 +24,11 @@ const ExportButtons = ({
   onRenameAll,
 }: ExportButtonsProps) => {
   return (
-    <>
+    <div className="space-y-2">
       <Button
         onClick={onSelectAll}
         variant="outline"
-        className="w-full flex items-center justify-center mb-2 text-editor-text"
+        className="w-full flex items-center justify-center text-editor-text"
       >
         <Play className="mr-2 h-4 w-4" />
         Export All
@@ -37,10 +37,10 @@ const ExportButtons = ({
       <Button
         onClick={onStartExport}
         disabled={isExporting || selectedCount === 0}
-        className="bg-editor-highlight hover:bg-editor-highlight/90 text-white w-full flex items-center justify-center"
+        className="w-full flex items-center justify-center bg-editor-highlight hover:bg-editor-highlight/90 text-white"
       >
         <Play className="mr-2 h-4 w-4" />
-        <span>Export Selected ({selectedCount})</span>
+        Export Selected ({selectedCount})
       </Button>
 
       {isExporting && (
@@ -48,27 +48,27 @@ const ExportButtons = ({
           <Button 
             onClick={onTogglePause} 
             variant="outline" 
-            className="w-full flex items-center justify-center"
+            className="w-full flex items-center justify-center text-editor-text"
           >
             {isPaused ? (
               <>
                 <Play className="mr-2 h-4 w-4" />
-                <span>Resume Export</span>
+                Resume Export
               </>
             ) : (
               <>
                 <PauseCircle className="mr-2 h-4 w-4" />
-                <span>Pause Export</span>
+                Pause Export
               </>
             )}
           </Button>
           <Button 
             onClick={onStopExport} 
             variant="destructive" 
-            className="w-full flex items-center justify-center"
+            className="w-full flex items-center justify-center text-white"
           >
             <StopCircle className="mr-2 h-4 w-4" />
-            <span>Stop Export</span>
+            Stop Export
           </Button>
         </>
       )}
@@ -76,12 +76,12 @@ const ExportButtons = ({
       <Button 
         onClick={onRenameAll} 
         variant="outline"
-        className="w-full flex items-center justify-center"
+        className="w-full flex items-center justify-center text-editor-text"
       >
         <Edit3 className="mr-2 h-4 w-4" />
-        <span>Rename All</span>
+        Rename All
       </Button>
-    </>
+    </div>
   );
 };
 
