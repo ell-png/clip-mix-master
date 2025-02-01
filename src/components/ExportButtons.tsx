@@ -28,7 +28,7 @@ const ExportButtons = ({
       <Button
         onClick={onSelectAll}
         variant="outline"
-        className="w-full flex items-center justify-center text-editor-text"
+        className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <Play className="mr-2 h-4 w-4" />
         Export All
@@ -48,27 +48,27 @@ const ExportButtons = ({
           <Button 
             onClick={onTogglePause} 
             variant="outline" 
-            className="w-full flex items-center justify-center text-editor-text"
+            className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
           >
             {isPaused ? (
               <>
                 <Play className="mr-2 h-4 w-4" />
-                <span className="text-editor-text">Resume Export</span>
+                Resume Export
               </>
             ) : (
               <>
                 <PauseCircle className="mr-2 h-4 w-4" />
-                <span className="text-editor-text">Pause Export</span>
+                Pause Export
               </>
             )}
           </Button>
           <Button 
             onClick={onStopExport} 
             variant="destructive" 
-            className="w-full flex items-center justify-center"
+            className="w-full flex items-center justify-center bg-destructive hover:bg-destructive/90 text-white"
           >
             <StopCircle className="mr-2 h-4 w-4" />
-            <span className="text-white">Stop Export</span>
+            Stop Export
           </Button>
         </>
       )}
@@ -76,7 +76,7 @@ const ExportButtons = ({
       <Button 
         onClick={onRenameAll} 
         variant="outline"
-        className="w-full flex items-center justify-center text-editor-text"
+        className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <Edit3 className="mr-2 h-4 w-4" />
         Rename All
