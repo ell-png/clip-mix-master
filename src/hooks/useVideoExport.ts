@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { initFFmpeg, concatenateVideos } from '@/utils/ffmpegUtils';
 import { VideoFile, VideoSelection, ExportProgress, ExportOptions } from '@/types/video';
@@ -140,8 +140,20 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
     setIsExporting(true);
     setCurrentExportIndex(0);
-    setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
+    setExportProgress({ percent: 0, timeRemaining: null, startTime: Date.now() });
   }, [combinations.length, toast]);
+
+  // Add effect to handle the export process
+  useEffect(() => {
+    if (isExporting && !isPaused && combinations.length > 0) {
+      const selectedCombination = combinations[currentExportIndex];
+      if (selectedCombination) {
+        exportCombination(selectedCombination, currentExportIndex, (updatedCombinations) => {
+          // Handle the updated combinations if needed
+        });
+      }
+    }
+  }, [isExporting, isPaused, currentExportIndex, combinations, exportCombination]);
 
   return {
     isExporting,

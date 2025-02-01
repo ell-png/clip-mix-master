@@ -30,7 +30,6 @@ const ExportProgress = ({
       <Progress 
         value={exportProgress} 
         className="h-2 bg-editor-accent"
-        style={{ '--progress-value': `${exportProgress}%` } as React.CSSProperties}
       />
       <div className="flex flex-col sm:flex-row sm:justify-between text-sm mt-2 space-y-2 sm:space-y-0">
         <p className="text-editor-text">
