@@ -44,7 +44,11 @@ export const useVideoExport = (combinations: Combination[]) => {
     });
   }, [isPaused, toast]);
 
-  const exportCombination = useCallback(async (combination: Combination, index: number, onCombinationExported: (combinations: Combination[]) => void) => {
+  const exportCombination = useCallback(async (
+    combination: Combination, 
+    index: number, 
+    onCombinationExported: (combinations: Combination[]) => void
+  ) => {
     if (isPaused) return;
 
     setCurrentCombination({
@@ -74,9 +78,13 @@ export const useVideoExport = (combinations: Combination[]) => {
       await downloadFile(combination.cta, 'cta');
       setExportProgress(100);
 
-      onCombinationExported(prev => 
-        prev.map((c, i) => i === index ? { ...c, exported: true } : c)
+      // Create a new array with the updated combination
+      const updatedCombinations = combinations.map((c, i) => 
+        i === index ? { ...c, exported: true } : c
       );
+      
+      // Pass the new array to the callback
+      onCombinationExported(updatedCombinations);
       
       setTimeout(() => {
         if (index < combinations.length - 1) {
