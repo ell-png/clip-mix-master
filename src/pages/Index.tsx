@@ -17,6 +17,7 @@ import { useVideoExport } from '@/hooks/useVideoExport';
 import { useVideoSections } from '@/hooks/useVideoSections';
 
 interface Combination {
+  id: number;
   hook: File;
   sellingPoint: File;
   cta: File;
@@ -25,6 +26,7 @@ interface Combination {
 
 const Index = () => {
   const [combinations, setCombinations] = useState<Combination[]>([]);
+  const [selectedCombinations, setSelectedCombinations] = useState<number[]>([]);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ section: string; index: number } | null>(null);
   const [newFileName, setNewFileName] = useState('');
@@ -52,15 +54,17 @@ const Index = () => {
     togglePause,
     startExport,
     exportCombination
-  } = useVideoExport(combinations);
+  } = useVideoExport(combinations.filter(c => selectedCombinations.includes(c.id)));
 
   useEffect(() => {
+    let id = 0;
     const newCombinations: Combination[] = [];
     if (sections.hook && sections.sellingPoint && sections.cta) {
       sections.hook.forEach(hook => {
         sections.sellingPoint.forEach(sellingPoint => {
           sections.cta.forEach(cta => {
             newCombinations.push({
+              id: id++,
               hook,
               sellingPoint,
               cta,
@@ -71,13 +75,16 @@ const Index = () => {
       });
     }
     setCombinations(newCombinations);
+    setSelectedCombinations([]);
   }, [sections]);
 
-  useEffect(() => {
-    if (isExporting && combinations[currentExportIndex]) {
-      exportCombination(combinations[currentExportIndex], currentExportIndex, setCombinations);
-    }
-  }, [isExporting, currentExportIndex, combinations, exportCombination]);
+  const handleSelectCombination = (id: number) => {
+    setSelectedCombinations(prev => 
+      prev.includes(id)
+        ? prev.filter(cId => cId !== id)
+        : [...prev, id]
+    );
+  };
 
   const handleRenameClick = (section: string, index: number) => {
     setRenameTarget({ section, index });
@@ -164,7 +171,7 @@ const Index = () => {
           isExporting={isExporting}
           exportProgress={exportProgress}
           currentExportIndex={currentExportIndex}
-          totalCombinations={combinations.length}
+          selectedCombinations={selectedCombinations}
         />
 
         <div className="flex justify-between items-start gap-4">
@@ -172,7 +179,9 @@ const Index = () => {
           <ExportControls
             isExporting={isExporting}
             isPaused={isPaused}
-            combinationsLength={combinations.length}
+            combinations={combinations}
+            selectedCombinations={selectedCombinations}
+            onSelectCombination={handleSelectCombination}
             onStartExport={startExport}
             onTogglePause={togglePause}
             onStopExport={stopExport}
