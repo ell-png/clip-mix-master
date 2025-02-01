@@ -37,10 +37,7 @@ export const initFFmpeg = async () => {
       try {
         await ffmpeg.load({
           coreURL,
-          wasmURL,
-          progress: (progress) => {
-            console.log('FFmpeg loading progress:', progress);
-          }
+          wasmURL
         });
         console.log('FFmpeg load completed successfully');
       } catch (error) {
