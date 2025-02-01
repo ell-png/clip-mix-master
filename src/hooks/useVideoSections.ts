@@ -7,6 +7,7 @@ interface VideoSections {
 
 export const useVideoSections = () => {
   const { toast } = useToast();
+  const [sectionOrder, setSectionOrder] = useState<string[]>(['hook', 'sellingPoint', 'cta']);
   const [sections, setSections] = useState<VideoSections>({
     hook: [],
     sellingPoint: [],
@@ -52,6 +53,7 @@ export const useVideoSections = () => {
       ...prev,
       [sectionName]: []
     }));
+    setSectionOrder(prev => [...prev, sectionName]);
     toast({
       title: "Section added",
       description: `Added new section: ${sectionName}`,
@@ -64,18 +66,34 @@ export const useVideoSections = () => {
       delete newSections[sectionName];
       return newSections;
     });
+    setSectionOrder(prev => prev.filter(section => section !== sectionName));
     toast({
       title: "Section deleted",
       description: `Deleted section: ${sectionName}`,
     });
   }, [toast]);
 
+  const reorderSections = useCallback((startIndex: number, endIndex: number) => {
+    setSectionOrder(prev => {
+      const result = Array.from(prev);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return result;
+    });
+    toast({
+      title: "Sections reordered",
+      description: "Section order updated successfully",
+    });
+  }, [toast]);
+
   return {
     sections,
+    sectionOrder,
     handleUpload,
     handleRename,
     handleDelete,
     addSection,
-    deleteSection
+    deleteSection,
+    reorderSections
   };
 };

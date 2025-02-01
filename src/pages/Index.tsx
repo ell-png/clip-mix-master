@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, GripVertical } from 'lucide-react';
 import VideoSection from '@/components/VideoSection';
 import ExportControls from '@/components/ExportControls';
 import CombinationsList from '@/components/CombinationsList';
@@ -30,14 +30,17 @@ const Index = () => {
   const [newFileName, setNewFileName] = useState('');
   const [newSectionName, setNewSectionName] = useState('');
   const [isAddSectionDialogOpen, setIsAddSectionDialogOpen] = useState(false);
+  const [draggedSection, setDraggedSection] = useState<number | null>(null);
 
   const {
     sections,
+    sectionOrder,
     handleUpload,
     handleRename,
     handleDelete,
     addSection,
-    deleteSection
+    deleteSection,
+    reorderSections
   } = useVideoSections();
 
   const {
@@ -97,6 +100,21 @@ const Index = () => {
     setNewSectionName('');
   };
 
+  const handleDragStart = (index: number) => {
+    setDraggedSection(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedSection === null || draggedSection === index) return;
+    reorderSections(draggedSection, index);
+    setDraggedSection(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedSection(null);
+  };
+
   return (
     <div className="min-h-screen bg-editor-bg text-editor-text p-8">
       <div className="max-w-6xl mx-auto">
@@ -108,20 +126,32 @@ const Index = () => {
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 group">
-          {Object.entries(sections).map(([section, files]) => (
-            <div key={section} className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute -top-2 -right-2 text-red-500 hover:text-red-600"
-                onClick={() => deleteSection(section)}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {sectionOrder.map((section, index) => (
+            <div 
+              key={section}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              className="relative group"
+            >
+              <div className="absolute -top-2 -right-2 flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500 hover:text-red-600"
+                  onClick={() => deleteSection(section)}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="cursor-move flex items-center justify-center absolute -top-2 -left-2 w-8 h-8 rounded-full bg-editor-surface opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4" />
+              </div>
               <VideoSection
                 section={section}
-                files={files}
+                files={sections[section] || []}
                 onUpload={handleUpload}
                 onRename={handleRenameClick}
                 onDelete={handleDelete}
