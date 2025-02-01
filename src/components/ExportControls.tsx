@@ -41,6 +41,7 @@ const ExportControls = ({
         isExporting={isExporting}
         isPaused={isPaused}
         selectedCount={selectedCombinations.length}
+        totalCount={combinations.length}
         onSelectAll={onSelectAll}
         onStartExport={onStartExport}
         onExportAll={onExportAll}

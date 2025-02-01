@@ -6,6 +6,7 @@ interface ExportButtonsProps {
   isExporting: boolean;
   isPaused: boolean;
   selectedCount: number;
+  totalCount: number;
   onSelectAll: () => void;
   onStartExport: () => void;
   onExportAll: () => void;
@@ -18,6 +19,7 @@ const ExportButtons = ({
   isExporting,
   isPaused,
   selectedCount,
+  totalCount,
   onSelectAll,
   onStartExport,
   onExportAll,
@@ -25,6 +27,8 @@ const ExportButtons = ({
   onStopExport,
   onRenameAll,
 }: ExportButtonsProps) => {
+  const isAllSelected = selectedCount === totalCount && totalCount > 0;
+
   return (
     <div className="space-y-2">
       <Button
@@ -33,7 +37,7 @@ const ExportButtons = ({
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <CheckSquare className="mr-2 h-4 w-4" />
-        Select All Videos
+        {isAllSelected ? 'Deselect All Videos' : 'Select All Videos'}
       </Button>
 
       <Button
