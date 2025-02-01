@@ -18,20 +18,38 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     sellingPoint: null,
     cta: null,
   });
+  
   const ffmpegInstanceRef = useRef<any>(null);
   const isExportingRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
+  const exportIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const calculateTimeRemaining = useCallback((progress: number) => {
     if (!startTimeRef.current || progress <= 0) return null;
+    
     const elapsed = (Date.now() - startTimeRef.current) / 1000;
-    const totalEstimate = (elapsed * 100) / progress;
-    return Math.max(0, totalEstimate - elapsed);
+    if (elapsed <= 0) return null;
+    
+    const percentageComplete = progress / 100;
+    if (percentageComplete <= 0) return null;
+    
+    const totalEstimated = elapsed / percentageComplete;
+    const remaining = Math.max(0, totalEstimated - elapsed);
+    
+    console.log('Time calculation:', {
+      elapsed,
+      percentageComplete,
+      totalEstimated,
+      remaining
+    });
+    
+    return remaining;
   }, []);
 
   const updateProgress = useCallback((progress: number) => {
     if (!startTimeRef.current) {
       startTimeRef.current = Date.now();
+      console.log('Export started at:', startTimeRef.current);
     }
     
     const timeRemaining = calculateTimeRemaining(progress);
@@ -52,6 +70,12 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     setCurrentExportIndex(0);
     setIsPaused(false);
     startTimeRef.current = null;
+    
+    if (exportIntervalRef.current) {
+      clearInterval(exportIntervalRef.current);
+      exportIntervalRef.current = null;
+    }
+    
     toast({
       title: "Export stopped",
       description: "Video export process has been stopped",
@@ -129,9 +153,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         startTimeRef.current = null;
       } else {
         console.log('All exports completed');
-        isExportingRef.current = false;
-        setIsExporting(false);
-        startTimeRef.current = null;
+        stopExport();
         toast({
           title: "Export complete",
           description: `Successfully exported ${combinations.length} video combinations`,
@@ -140,16 +162,14 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
     } catch (error) {
       console.error('Export error:', error);
-      isExportingRef.current = false;
-      setIsExporting(false);
-      startTimeRef.current = null;
+      stopExport();
       toast({
         title: "Export failed",
         description: error.message || "There was an error exporting the videos",
         variant: "destructive",
       });
     }
-  }, [combinations, isPaused, toast, updateProgress]);
+  }, [combinations, isPaused, toast, updateProgress, stopExport]);
 
   const startExport = useCallback(async () => {
     if (isExportingRef.current) {
@@ -173,18 +193,28 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       setCurrentExportIndex(0);
       startTimeRef.current = Date.now();
       setExportProgress({ percent: 0, timeRemaining: null, startTime: startTimeRef.current });
+
+      // Start progress update interval
+      if (exportIntervalRef.current) {
+        clearInterval(exportIntervalRef.current);
+      }
+      exportIntervalRef.current = setInterval(() => {
+        if (isExportingRef.current && !isPaused) {
+          const currentProgress = exportProgress.percent;
+          updateProgress(currentProgress);
+        }
+      }, 1000);
+
     } catch (error) {
       console.error('Export initialization error:', error);
-      isExportingRef.current = false;
-      setIsExporting(false);
-      startTimeRef.current = null;
+      stopExport();
       toast({
         title: "Export failed",
         description: error.message || "Failed to initialize video processing",
         variant: "destructive",
       });
     }
-  }, [combinations, toast]);
+  }, [combinations, toast, exportProgress.percent, isPaused, updateProgress, stopExport]);
 
   useEffect(() => {
     if (isExporting && !isPaused && combinations.length > 0) {
@@ -196,6 +226,15 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       }
     }
   }, [isExporting, isPaused, currentExportIndex, combinations, exportCombination]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (exportIntervalRef.current) {
+        clearInterval(exportIntervalRef.current);
+      }
+    };
+  }, []);
 
   return {
     isExporting,
