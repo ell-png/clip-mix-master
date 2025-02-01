@@ -18,9 +18,10 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     sellingPoint: null,
     cta: null,
   });
+  const [ffmpegInstance, setFfmpegInstance] = useState<any>(null);
 
   const calculateTimeRemaining = (progress: number, startTime: number) => {
-    const elapsed = (Date.now() - startTime) / 1000; // seconds
+    const elapsed = (Date.now() - startTime) / 1000;
     const totalEstimate = (elapsed * 100) / progress;
     return Math.max(0, totalEstimate - elapsed);
   };
@@ -66,7 +67,10 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         cta: combination.cta,
       });
 
-      const ffmpeg = await initFFmpeg();
+      if (!ffmpegInstance) {
+        const instance = await initFFmpeg();
+        setFfmpegInstance(instance);
+      }
       
       if (!exportProgress.startTime) {
         setExportProgress(prev => ({ ...prev, startTime: Date.now() }));
@@ -78,7 +82,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       };
 
       const blob = await concatenateVideos(
-        ffmpeg,
+        ffmpegInstance,
         combination.hook,
         combination.sellingPoint,
         combination.cta,
@@ -86,7 +90,6 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         exportOptions
       );
 
-      // Download the combined video
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -104,7 +107,6 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       
       onCombinationExported(updatedCombinations);
       
-      // Add a small delay between exports to prevent overwhelming the browser
       await new Promise(resolve => setTimeout(resolve, 500));
 
       if (index < combinations.length - 1) {
@@ -126,9 +128,9 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       });
       setIsExporting(false);
     }
-  }, [combinations.length, isPaused, toast, exportProgress.startTime]);
+  }, [combinations.length, isPaused, toast, exportProgress.startTime, ffmpegInstance]);
 
-  const startExport = useCallback(() => {
+  const startExport = useCallback(async () => {
     if (combinations.length === 0) {
       toast({
         title: "No combinations available",
@@ -138,12 +140,26 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       return;
     }
 
-    setIsExporting(true);
-    setCurrentExportIndex(0);
-    setExportProgress({ percent: 0, timeRemaining: null, startTime: Date.now() });
-  }, [combinations.length, toast]);
+    try {
+      // Initialize FFmpeg before starting export
+      if (!ffmpegInstance) {
+        const instance = await initFFmpeg();
+        setFfmpegInstance(instance);
+      }
 
-  // Add effect to handle the export process
+      setIsExporting(true);
+      setCurrentExportIndex(0);
+      setExportProgress({ percent: 0, timeRemaining: null, startTime: Date.now() });
+    } catch (error) {
+      console.error('Error initializing FFmpeg:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to initialize video processing",
+        variant: "destructive",
+      });
+    }
+  }, [combinations.length, toast, ffmpegInstance]);
+
   useEffect(() => {
     if (isExporting && !isPaused && combinations.length > 0) {
       const selectedCombination = combinations[currentExportIndex];
