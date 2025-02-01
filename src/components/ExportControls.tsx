@@ -80,10 +80,10 @@ const ExportControls = ({
       <Button 
         onClick={onRenameAll} 
         variant="outline"
-        className="w-full"
+        className="w-full flex items-center"
       >
         <Edit3 className="mr-2 h-4 w-4" />
-        Rename All
+        <span>Rename All</span>
       </Button>
     </div>
   );

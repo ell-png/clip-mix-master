@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Minus, GripVertical, Edit } from 'lucide-react';
-import VideoSection from '@/components/VideoSection';
+import { useVideoExport } from '@/hooks/useVideoExport';
+import { useVideoSections } from '@/hooks/useVideoSections';
+import SectionManager from '@/components/SectionManager';
+import DialogManager from '@/components/DialogManager';
 import ExportControls from '@/components/ExportControls';
 import CombinationsList from '@/components/CombinationsList';
 import ExportProgress from '@/components/ExportProgress';
-import { useVideoExport } from '@/hooks/useVideoExport';
-import { useVideoSections } from '@/hooks/useVideoSections';
 
 interface Combination {
   id: number;
@@ -56,7 +47,6 @@ const Index = () => {
     stopExport,
     togglePause,
     startExport,
-    exportCombination
   } = useVideoExport(combinations.filter(c => selectedCombinations.includes(c.id)));
 
   useEffect(() => {
@@ -95,14 +85,6 @@ const Index = () => {
     setIsRenameDialogOpen(true);
   };
 
-  const confirmRename = () => {
-    if (!renameTarget || !newFileName) return;
-    handleRename(renameTarget.section, renameTarget.index, newFileName);
-    setIsRenameDialogOpen(false);
-    setRenameTarget(null);
-    setNewFileName('');
-  };
-
   const handleAddSection = () => {
     if (!newSectionName) return;
     addSection(newSectionName);
@@ -110,25 +92,18 @@ const Index = () => {
     setNewSectionName('');
   };
 
-  const handleDragStart = (index: number) => {
-    setDraggedSection(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedSection === null || draggedSection === index) return;
-    reorderSections(draggedSection, index);
-    setDraggedSection(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedSection(null);
-  };
-
   const handleSectionRename = (section: string) => {
     setSectionToRename(section);
     setNewSectionName(section);
     setIsSectionRenameDialogOpen(true);
+  };
+
+  const confirmRename = () => {
+    if (!renameTarget || !newFileName) return;
+    handleRename(renameTarget.section, renameTarget.index, newFileName);
+    setIsRenameDialogOpen(false);
+    setRenameTarget(null);
+    setNewFileName('');
   };
 
   const confirmSectionRename = () => {
@@ -143,54 +118,25 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-editor-bg text-editor-text p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Video Editor</h1>
-          <Button onClick={() => setIsAddSectionDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Section
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {sectionOrder.map((section, index) => (
-            <div 
-              key={section}
-              draggable
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDragEnd={handleDragEnd}
-              className="relative group"
-            >
-              <div className="absolute -top-2 -right-2 flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSectionRename(section)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-500 hover:text-red-600"
-                  onClick={() => deleteSection(section)}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="cursor-move flex items-center justify-center absolute -top-2 -left-2 w-8 h-8 rounded-full bg-editor-surface opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="h-4 w-4" />
-              </div>
-              <VideoSection
-                section={section}
-                files={sections[section] || []}
-                onUpload={handleUpload}
-                onRename={handleRenameClick}
-                onDelete={handleDelete}
-              />
-            </div>
-          ))}
-        </div>
+        <SectionManager
+          sections={sections}
+          sectionOrder={sectionOrder}
+          draggedSection={draggedSection}
+          onUpload={handleUpload}
+          onRename={handleRenameClick}
+          onDelete={handleDelete}
+          onAddSectionClick={() => setIsAddSectionDialogOpen(true)}
+          onDeleteSection={deleteSection}
+          onSectionRename={handleSectionRename}
+          onDragStart={(index) => setDraggedSection(index)}
+          onDragOver={(e, index) => {
+            e.preventDefault();
+            if (draggedSection === null || draggedSection === index) return;
+            reorderSections(draggedSection, index);
+            setDraggedSection(index);
+          }}
+          onDragEnd={() => setDraggedSection(null)}
+        />
 
         <ExportProgress
           isExporting={isExporting}
@@ -215,74 +161,21 @@ const Index = () => {
         </div>
       </div>
 
-      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename File</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newFileName}
-              onChange={(e) => setNewFileName(e.target.value)}
-              placeholder="Enter new file name"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmRename}>
-              Rename
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAddSectionDialogOpen} onOpenChange={setIsAddSectionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Section</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newSectionName}
-              onChange={(e) => setNewSectionName(e.target.value)}
-              placeholder="Enter section name"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddSectionDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddSection}>
-              Add Section
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isSectionRenameDialogOpen} onOpenChange={setIsSectionRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Section</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newSectionName}
-              onChange={(e) => setNewSectionName(e.target.value)}
-              placeholder="Enter new section name"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSectionRenameDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmSectionRename}>
-              Rename
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DialogManager
+        isRenameDialogOpen={isRenameDialogOpen}
+        setIsRenameDialogOpen={setIsRenameDialogOpen}
+        isAddSectionDialogOpen={isAddSectionDialogOpen}
+        setIsAddSectionDialogOpen={setIsAddSectionDialogOpen}
+        isSectionRenameDialogOpen={isSectionRenameDialogOpen}
+        setIsSectionRenameDialogOpen={setIsSectionRenameDialogOpen}
+        newFileName={newFileName}
+        setNewFileName={setNewFileName}
+        newSectionName={newSectionName}
+        setNewSectionName={setNewSectionName}
+        onConfirmRename={confirmRename}
+        onConfirmAddSection={handleAddSection}
+        onConfirmSectionRename={confirmSectionRename}
+      />
     </div>
   );
 };
