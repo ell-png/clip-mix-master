@@ -16,6 +16,7 @@ interface SectionManagerProps {
   onDragStart: (index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDragEnd: () => void;
+  onMoveVideo: (fromSection: string, toSection: string, fileIndex: number) => void;
 }
 
 const SectionManager = ({
@@ -30,7 +31,8 @@ const SectionManager = ({
   onSectionRename,
   onDragStart,
   onDragOver,
-  onDragEnd
+  onDragEnd,
+  onMoveVideo
 }: SectionManagerProps) => {
   return (
     <>
@@ -78,6 +80,7 @@ const SectionManager = ({
               onUpload={onUpload}
               onRename={onRename}
               onDelete={onDelete}
+              onMoveVideo={onMoveVideo}
             />
           </div>
         ))}

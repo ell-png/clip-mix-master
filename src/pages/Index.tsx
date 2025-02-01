@@ -36,7 +36,8 @@ const Index = () => {
     addSection,
     deleteSection,
     reorderSections,
-    renameSection
+    renameSection,
+    moveVideo
   } = useVideoSections();
 
   const {
@@ -137,6 +138,7 @@ const Index = () => {
             setDraggedSection(index);
           }}
           onDragEnd={() => setDraggedSection(null)}
+          onMoveVideo={moveVideo}
         />
 
         <ExportProgress

@@ -48,6 +48,19 @@ export const useVideoSections = () => {
     });
   }, [toast]);
 
+  const moveVideo = useCallback((fromSection: string, toSection: string, fileIndex: number) => {
+    setSections(prev => {
+      const newSections = { ...prev };
+      const [movedFile] = newSections[fromSection].splice(fileIndex, 1);
+      newSections[toSection].push(movedFile);
+      return newSections;
+    });
+    toast({
+      title: "Video moved",
+      description: `Moved from ${fromSection} to ${toSection}`,
+    });
+  }, [toast]);
+
   const addSection = useCallback((sectionName: string) => {
     setSections(prev => ({
       ...prev,
@@ -109,6 +122,7 @@ export const useVideoSections = () => {
     addSection,
     deleteSection,
     reorderSections,
-    renameSection
+    renameSection,
+    moveVideo
   };
 };
