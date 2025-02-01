@@ -67,9 +67,13 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         cta: combination.cta,
       });
 
-      if (!ffmpegInstance) {
-        const instance = await initFFmpeg();
-        setFfmpegInstance(instance);
+      // Ensure FFmpeg is initialized
+      let ffmpeg = ffmpegInstance;
+      if (!ffmpeg) {
+        console.log('Initializing FFmpeg...');
+        ffmpeg = await initFFmpeg();
+        setFfmpegInstance(ffmpeg);
+        console.log('FFmpeg initialized successfully');
       }
       
       if (!exportProgress.startTime) {
@@ -81,8 +85,9 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         speed: 'fast'
       };
 
+      console.log('Starting video concatenation...');
       const blob = await concatenateVideos(
-        ffmpegInstance,
+        ffmpeg,
         combination.hook,
         combination.sellingPoint,
         combination.cta,
@@ -141,9 +146,12 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     }
 
     try {
-      // Initialize FFmpeg before starting export
+      console.log('Starting export process...');
+      // Initialize FFmpeg if not already initialized
       if (!ffmpegInstance) {
+        console.log('Initializing FFmpeg before export...');
         const instance = await initFFmpeg();
+        console.log('FFmpeg initialized successfully');
         setFfmpegInstance(instance);
       }
 
