@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from './ui/button';
-import { Play, PauseCircle, StopCircle, Edit3, CheckSquare } from 'lucide-react';
+import { CheckSquare, Play, PauseCircle, StopCircle, Edit3 } from 'lucide-react';
 
 interface ExportButtonsProps {
   isExporting: boolean;
@@ -33,16 +33,17 @@ const ExportButtons = ({
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <CheckSquare className="mr-2 h-4 w-4" />
-        Select All
+        Select All Videos
       </Button>
 
       <Button
         onClick={onExportAll}
         variant="outline"
+        disabled={isExporting}
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <Play className="mr-2 h-4 w-4" />
-        Export All
+        Export All Videos
       </Button>
 
       <Button
@@ -90,7 +91,7 @@ const ExportButtons = ({
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <Edit3 className="mr-2 h-4 w-4" />
-        Rename All
+        Rename All Videos
       </Button>
     </div>
   );

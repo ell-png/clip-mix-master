@@ -6,6 +6,7 @@ import DialogManager from '@/components/DialogManager';
 import ExportControls from '@/components/ExportControls';
 import CombinationsList from '@/components/CombinationsList';
 import ExportProgress from '@/components/ExportProgress';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Combination {
   id: number;
@@ -16,16 +17,11 @@ interface Combination {
 }
 
 const Index = () => {
+  const { toast } = useToast();
   const [combinations, setCombinations] = useState<Combination[]>([]);
   const [selectedCombinations, setSelectedCombinations] = useState<number[]>([]);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<{ section: string; index: number } | null>(null);
   const [newFileName, setNewFileName] = useState('');
-  const [newSectionName, setNewSectionName] = useState('');
-  const [isAddSectionDialogOpen, setIsAddSectionDialogOpen] = useState(false);
-  const [draggedSection, setDraggedSection] = useState<number | null>(null);
-  const [isSectionRenameDialogOpen, setIsSectionRenameDialogOpen] = useState(false);
-  const [sectionToRename, setSectionToRename] = useState<string | null>(null);
 
   const {
     sections,
@@ -71,7 +67,6 @@ const Index = () => {
       });
     }
     setCombinations(newCombinations);
-    setSelectedCombinations([]);
   }, [sections]);
 
   const handleSelectCombination = (id: number) => {
@@ -90,45 +85,46 @@ const Index = () => {
     }
   };
 
-  const handleRenameClick = (section: string, index: number) => {
-    setRenameTarget({ section, index });
-    setNewFileName('');
+  const handleExportAll = () => {
+    if (combinations.length === 0) {
+      toast({
+        title: "No combinations available",
+        description: "Please add videos to create combinations first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    startExport();
+  };
+
+  const handleRenameAll = () => {
+    if (combinations.length === 0) {
+      toast({
+        title: "No videos to rename",
+        description: "Please add videos first.",
+        variant: "destructive"
+      });
+      return;
+    }
     setIsRenameDialogOpen(true);
   };
 
-  const handleAddSection = () => {
-    if (!newSectionName) return;
-    addSection(newSectionName);
-    setIsAddSectionDialogOpen(false);
-    setNewSectionName('');
-  };
-
-  const handleSectionRename = (section: string) => {
-    setSectionToRename(section);
-    setNewSectionName(section);
-    setIsSectionRenameDialogOpen(true);
-  };
-
-  const confirmRename = () => {
-    if (!renameTarget || !newFileName) return;
-    handleRename(renameTarget.section, renameTarget.index, newFileName);
+  const confirmRenameAll = () => {
+    if (!newFileName) return;
+    
+    combinations.forEach((combination, index) => {
+      const newName = `${newFileName}_${index + 1}`;
+      handleRename('hook', index, newName);
+      handleRename('sellingPoint', index, newName);
+      handleRename('cta', index, newName);
+    });
+    
     setIsRenameDialogOpen(false);
-    setRenameTarget(null);
     setNewFileName('');
-  };
-
-  const confirmSectionRename = () => {
-    if (sectionToRename && newSectionName) {
-      renameSection(sectionToRename, newSectionName);
-      setIsSectionRenameDialogOpen(false);
-      setSectionToRename(null);
-      setNewSectionName('');
-    }
-  };
-
-  const handleExportAll = () => {
-    setSelectedCombinations(combinations.map(c => c.id));
-    startExport();
+    toast({
+      title: "Videos renamed",
+      description: "All videos have been renamed successfully."
+    });
   };
 
   return (
@@ -137,21 +133,12 @@ const Index = () => {
         <SectionManager
           sections={sections}
           sectionOrder={sectionOrder}
-          draggedSection={draggedSection}
           onUpload={handleUpload}
-          onRename={handleRenameClick}
+          onRename={(section, index) => handleRename(section, index, '')}
           onDelete={handleDelete}
-          onAddSectionClick={() => setIsAddSectionDialogOpen(true)}
+          onAddSectionClick={() => {}}
           onDeleteSection={deleteSection}
-          onSectionRename={handleSectionRename}
-          onDragStart={(index) => setDraggedSection(index)}
-          onDragOver={(e, index) => {
-            e.preventDefault();
-            if (draggedSection === null || draggedSection === index) return;
-            reorderSections(draggedSection, index);
-            setDraggedSection(index);
-          }}
-          onDragEnd={() => setDraggedSection(null)}
+          onSectionRename={(oldName, newName) => renameSection(oldName, newName)}
           onMoveVideo={moveVideo}
         />
 
@@ -175,7 +162,7 @@ const Index = () => {
             onExportAll={handleExportAll}
             onTogglePause={togglePause}
             onStopExport={stopExport}
-            onRenameAll={() => {}}
+            onRenameAll={handleRenameAll}
             onSelectAll={handleSelectAll}
           />
         </div>
@@ -184,17 +171,9 @@ const Index = () => {
       <DialogManager
         isRenameDialogOpen={isRenameDialogOpen}
         setIsRenameDialogOpen={setIsRenameDialogOpen}
-        isAddSectionDialogOpen={isAddSectionDialogOpen}
-        setIsAddSectionDialogOpen={setIsAddSectionDialogOpen}
-        isSectionRenameDialogOpen={isSectionRenameDialogOpen}
-        setIsSectionRenameDialogOpen={setIsSectionRenameDialogOpen}
         newFileName={newFileName}
         setNewFileName={setNewFileName}
-        newSectionName={newSectionName}
-        setNewSectionName={setNewSectionName}
-        onConfirmRename={confirmRename}
-        onConfirmAddSection={handleAddSection}
-        onConfirmSectionRename={confirmSectionRename}
+        onConfirmRename={confirmRenameAll}
       />
     </div>
   );
