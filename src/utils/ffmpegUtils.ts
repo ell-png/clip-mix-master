@@ -14,24 +14,48 @@ export const initFFmpeg = async () => {
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
       
       console.log('Fetching core.js...');
-      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+      let coreURL;
+      try {
+        coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+        console.log('Core.js fetched successfully');
+      } catch (error) {
+        console.error('Failed to fetch core.js:', error);
+        throw new Error(`Failed to fetch FFmpeg core.js: ${error.message}`);
+      }
       
       console.log('Fetching core.wasm...');
-      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
+      let wasmURL;
+      try {
+        wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
+        console.log('Core.wasm fetched successfully');
+      } catch (error) {
+        console.error('Failed to fetch core.wasm:', error);
+        throw new Error(`Failed to fetch FFmpeg core.wasm: ${error.message}`);
+      }
       
       console.log('Loading FFmpeg with URLs:', { coreURL, wasmURL });
-      await ffmpeg.load({
-        coreURL,
-        wasmURL,
-      });
-      console.log('FFmpeg load completed successfully');
+      try {
+        await ffmpeg.load({
+          coreURL,
+          wasmURL,
+        });
+        console.log('FFmpeg load completed successfully');
+      } catch (error) {
+        console.error('Failed to load FFmpeg:', error);
+        throw new Error(`Failed to load FFmpeg: ${error.message}`);
+      }
     } else {
       console.log('Reusing existing FFmpeg instance');
     }
+    
+    if (!ffmpeg.loaded) {
+      throw new Error('FFmpeg failed to load properly');
+    }
+    
     return ffmpeg;
   } catch (error) {
     console.error('FFmpeg initialization error:', error);
-    throw new Error(`Failed to initialize FFmpeg: ${error.message}`);
+    throw new Error(`Failed to initialize FFmpeg: ${error.message || 'Unknown error occurred'}`);
   }
 };
 
@@ -48,17 +72,22 @@ export const concatenateVideos = async (
     console.log('Writing files to FFmpeg filesystem...');
     
     // Write files to FFmpeg virtual filesystem
-    console.log('Writing hook video...');
-    await ffmpeg.writeFile('hook.mp4', await fetchFile(hook));
-    onProgress(20);
-    
-    console.log('Writing selling point video...');
-    await ffmpeg.writeFile('selling.mp4', await fetchFile(sellingPoint));
-    onProgress(40);
-    
-    console.log('Writing CTA video...');
-    await ffmpeg.writeFile('cta.mp4', await fetchFile(cta));
-    onProgress(60);
+    try {
+      console.log('Writing hook video...');
+      await ffmpeg.writeFile('hook.mp4', await fetchFile(hook));
+      onProgress(20);
+      
+      console.log('Writing selling point video...');
+      await ffmpeg.writeFile('selling.mp4', await fetchFile(sellingPoint));
+      onProgress(40);
+      
+      console.log('Writing CTA video...');
+      await ffmpeg.writeFile('cta.mp4', await fetchFile(cta));
+      onProgress(60);
+    } catch (error) {
+      console.error('Error writing files to FFmpeg:', error);
+      throw new Error(`Failed to write video files: ${error.message}`);
+    }
 
     const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
     await ffmpeg.writeFile('concat.txt', concat);
@@ -88,10 +117,22 @@ export const concatenateVideos = async (
     ];
     
     console.log('FFmpeg command:', command.join(' '));
-    await ffmpeg.exec(command);
+    try {
+      await ffmpeg.exec(command);
+    } catch (error) {
+      console.error('FFmpeg command execution failed:', error);
+      throw new Error(`FFmpeg command failed: ${error.message}`);
+    }
     
     console.log('Reading output file...');
-    const data = await ffmpeg.readFile('output.mp4');
+    let data;
+    try {
+      data = await ffmpeg.readFile('output.mp4');
+    } catch (error) {
+      console.error('Failed to read output file:', error);
+      throw new Error(`Failed to read output file: ${error.message}`);
+    }
+    
     const blob = new Blob([data], { type: 'video/mp4' });
     
     await cleanupFiles(ffmpeg);
@@ -100,7 +141,7 @@ export const concatenateVideos = async (
     return blob;
   } catch (error) {
     console.error('Video concatenation error:', error);
-    throw new Error(`Failed to concatenate videos: ${error.message}`);
+    throw new Error(`Failed to concatenate videos: ${error.message || 'Unknown error occurred'}`);
   }
 };
 
