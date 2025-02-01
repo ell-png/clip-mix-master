@@ -36,7 +36,7 @@ const ExportProgress = ({
         <p className="text-editor-text">
           Exporting combination {currentExportIndex + 1} of {selectedCombinations.length} ({Math.round(exportProgress)}%)
         </p>
-        {timeRemaining !== null && (
+        {timeRemaining !== null && timeRemaining > 0 && (
           <p className="text-editor-highlight font-medium">
             Time remaining: {formatTimeRemaining(timeRemaining)}
           </p>
