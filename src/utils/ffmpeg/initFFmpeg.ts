@@ -14,18 +14,22 @@ export const initFFmpeg = async () => {
     if (!ffmpeg.loaded) {
       console.log('Loading FFmpeg...');
       
+      // Add error event listener before loading
+      ffmpeg.on('log', ({ message }) => {
+        console.log('FFmpeg log:', message);
+      });
+
       await ffmpeg.load({
-        coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm/ffmpeg-core.js',
-        wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm/ffmpeg-core.wasm',
-        workerURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm/ffmpeg-core.worker.js'
+        coreURL: '/ffmpeg/ffmpeg-core.js',
+        wasmURL: '/ffmpeg/ffmpeg-core.wasm',
+        workerURL: '/ffmpeg/worker.js'
       });
 
       // Add a small delay to ensure loading is complete
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (!ffmpeg.loaded) {
-        console.error('FFmpeg not properly loaded after initialization');
-        throw new Error('FFmpeg failed to initialize properly');
+        throw new Error('FFmpeg failed to load after initialization');
       }
       
       console.log('FFmpeg initialization completed successfully');
