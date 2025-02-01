@@ -15,8 +15,9 @@ export const initFFmpeg = async () => {
       console.log('Loading FFmpeg...');
       
       await ffmpeg.load({
-        coreURL: '/ffmpeg-core.js',
-        wasmURL: '/ffmpeg-core.wasm'
+        coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm/ffmpeg-core.js',
+        wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm/ffmpeg-core.wasm',
+        workerURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist/esm/ffmpeg-core.worker.js'
       });
 
       // Add a small delay to ensure loading is complete
