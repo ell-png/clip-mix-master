@@ -52,10 +52,10 @@ const ExportControls = ({
       <Button
         onClick={onSelectAll}
         variant="outline"
-        className="w-full flex items-center justify-center mb-2"
+        className="w-full flex items-center justify-center mb-2 text-editor-text"
       >
         <Play className="mr-2 h-4 w-4" />
-        <span>Select All Combinations</span>
+        Export All
       </Button>
 
       <Button
