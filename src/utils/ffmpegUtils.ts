@@ -7,19 +7,31 @@ let ffmpeg: FFmpeg | null = null;
 export const initFFmpeg = async () => {
   try {
     if (!ffmpeg) {
-      console.log('Initializing FFmpeg...');
+      console.log('Creating new FFmpeg instance...');
       ffmpeg = new FFmpeg();
+      
+      console.log('Loading FFmpeg with core files...');
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
+      
+      console.log('Fetching core.js...');
+      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+      
+      console.log('Fetching core.wasm...');
+      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
+      
+      console.log('Loading FFmpeg with URLs:', { coreURL, wasmURL });
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL,
+        wasmURL,
       });
-      console.log('FFmpeg initialized successfully');
+      console.log('FFmpeg load completed successfully');
+    } else {
+      console.log('Reusing existing FFmpeg instance');
     }
     return ffmpeg;
   } catch (error) {
-    console.error('Error initializing FFmpeg:', error);
-    throw new Error('Failed to initialize FFmpeg');
+    console.error('FFmpeg initialization error:', error);
+    throw new Error(`Failed to initialize FFmpeg: ${error.message}`);
   }
 };
 
@@ -32,8 +44,8 @@ export const concatenateVideos = async (
   options: ExportOptions
 ) => {
   try {
-    console.log('Starting video concatenation...');
-    onProgress(5);
+    console.log('Starting concatenation process...');
+    console.log('Writing files to FFmpeg filesystem...');
     
     // Write files to FFmpeg virtual filesystem
     console.log('Writing hook video...');
@@ -51,7 +63,7 @@ export const concatenateVideos = async (
     const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
     await ffmpeg.writeFile('concat.txt', concat);
 
-    // Apply quality and speed settings based on options
+    // Apply quality and speed settings
     const qualitySettings = {
       low: '-crf 28',
       medium: '-crf 23',
@@ -64,34 +76,31 @@ export const concatenateVideos = async (
       fast: '-preset veryfast'
     };
 
-    console.log('Starting FFmpeg concatenation...');
+    console.log('Executing FFmpeg command...');
     const command = [
       '-f', 'concat',
       '-safe', '0',
       '-i', 'concat.txt',
-      '-progress', 'pipe:1',  // Enable progress output
+      '-progress', 'pipe:1',
       ...qualitySettings[options.quality].split(' '),
       ...speedSettings[options.speed].split(' '),
       'output.mp4'
     ];
-    console.log('FFmpeg command:', command.join(' '));
     
+    console.log('FFmpeg command:', command.join(' '));
     await ffmpeg.exec(command);
-    onProgress(80);
     
     console.log('Reading output file...');
     const data = await ffmpeg.readFile('output.mp4');
-    
     const blob = new Blob([data], { type: 'video/mp4' });
-    console.log('Video concatenation complete!');
     
     await cleanupFiles(ffmpeg);
-    onProgress(100);
+    console.log('Video concatenation completed successfully');
     
     return blob;
   } catch (error) {
-    console.error('Error in concatenateVideos:', error);
-    throw error;
+    console.error('Video concatenation error:', error);
+    throw new Error(`Failed to concatenate videos: ${error.message}`);
   }
 };
 

@@ -61,21 +61,28 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     if (isPaused) return;
 
     try {
+      console.log('Starting export for combination:', index + 1);
+      
       setCurrentCombination({
         hook: combination.hook,
         sellingPoint: combination.sellingPoint,
         cta: combination.cta,
       });
 
-      // Ensure FFmpeg is initialized
+      // Initialize FFmpeg if needed
       let ffmpeg = ffmpegInstance;
       if (!ffmpeg) {
-        console.log('Initializing FFmpeg...');
-        ffmpeg = await initFFmpeg();
-        setFfmpegInstance(ffmpeg);
-        console.log('FFmpeg initialized successfully');
+        console.log('No FFmpeg instance found, initializing...');
+        try {
+          ffmpeg = await initFFmpeg();
+          console.log('FFmpeg initialized successfully');
+          setFfmpegInstance(ffmpeg);
+        } catch (error) {
+          console.error('FFmpeg initialization failed:', error);
+          throw error;
+        }
       }
-      
+
       if (!exportProgress.startTime) {
         setExportProgress(prev => ({ ...prev, startTime: Date.now() }));
       }
@@ -85,7 +92,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         speed: 'fast'
       };
 
-      console.log('Starting video concatenation...');
+      console.log('Starting video concatenation process...');
       const blob = await concatenateVideos(
         ffmpeg,
         combination.hook,
@@ -95,6 +102,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         exportOptions
       );
 
+      console.log('Creating download link...');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -112,6 +120,8 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       
       onCombinationExported(updatedCombinations);
       
+      console.log('Export completed for combination:', index + 1);
+      
       await new Promise(resolve => setTimeout(resolve, 500));
 
       if (index < combinations.length - 1) {
@@ -128,7 +138,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       console.error('Export error:', error);
       toast({
         title: "Export failed",
-        description: "There was an error exporting the videos",
+        description: error.message || "There was an error exporting the videos",
         variant: "destructive",
       });
       setIsExporting(false);
@@ -147,24 +157,30 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
     try {
       console.log('Starting export process...');
-      // Initialize FFmpeg if not already initialized
-      if (!ffmpegInstance) {
-        console.log('Initializing FFmpeg before export...');
-        const instance = await initFFmpeg();
-        console.log('FFmpeg initialized successfully');
-        setFfmpegInstance(instance);
-      }
-
       setIsExporting(true);
       setCurrentExportIndex(0);
       setExportProgress({ percent: 0, timeRemaining: null, startTime: Date.now() });
+      
+      // Initialize FFmpeg if needed
+      if (!ffmpegInstance) {
+        console.log('Initializing FFmpeg before export...');
+        try {
+          const instance = await initFFmpeg();
+          console.log('FFmpeg initialized successfully');
+          setFfmpegInstance(instance);
+        } catch (error) {
+          console.error('FFmpeg initialization failed:', error);
+          throw error;
+        }
+      }
     } catch (error) {
-      console.error('Error initializing FFmpeg:', error);
+      console.error('Export initialization error:', error);
       toast({
         title: "Export failed",
-        description: "Failed to initialize video processing",
+        description: error.message || "Failed to initialize video processing",
         variant: "destructive",
       });
+      setIsExporting(false);
     }
   }, [combinations.length, toast, ffmpegInstance]);
 
