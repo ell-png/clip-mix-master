@@ -100,7 +100,7 @@ const Index = () => {
     });
   }, [isPaused, toast]);
 
-  const exportCombination = useCallback((combination: Combination, index: number) => {
+  const exportCombination = useCallback(async (combination: Combination, index: number) => {
     if (isPaused) return;
 
     setCurrentCombination({
@@ -109,26 +109,39 @@ const Index = () => {
       cta: combination.cta,
     });
 
-    // Simulate export progress for this combination
-    let progress = 0;
-    const interval = setInterval(() => {
-      if (isPaused) {
-        clearInterval(interval);
-        return;
-      }
+    try {
+      // Create a download link for each video file
+      const downloadFile = async (file: File, prefix: string) => {
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${prefix}_${file.name}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
 
-      progress += 10;
-      if (progress <= 100) {
-        setExportProgress(progress);
-      } else {
-        clearInterval(interval);
-        setCombinations(prev => 
-          prev.map((c, i) => i === index ? { ...c, exported: true } : c)
-        );
-        
-        // Move to next combination
+      // Download each video in the combination
+      await downloadFile(combination.hook, 'hook');
+      setExportProgress(33);
+      
+      await downloadFile(combination.sellingPoint, 'selling_point');
+      setExportProgress(66);
+      
+      await downloadFile(combination.cta, 'cta');
+      setExportProgress(100);
+
+      // Mark combination as exported
+      setCombinations(prev => 
+        prev.map((c, i) => i === index ? { ...c, exported: true } : c)
+      );
+      
+      // Move to next combination after a short delay
+      setTimeout(() => {
         if (index < combinations.length - 1) {
           setCurrentExportIndex(index + 1);
+          setExportProgress(0);
         } else {
           setIsExporting(false);
           toast({
@@ -136,8 +149,16 @@ const Index = () => {
             description: `Successfully exported ${combinations.length} video combinations`,
           });
         }
-      }
-    }, 500);
+      }, 1000);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting the videos",
+        variant: "destructive",
+      });
+      setIsExporting(false);
+    }
   }, [combinations.length, isPaused, toast]);
 
   const handleRename = useCallback((section: string, index: number) => {
