@@ -53,22 +53,22 @@ const ExportButtons = ({
             {isPaused ? (
               <>
                 <Play className="mr-2 h-4 w-4" />
-                Resume Export
+                <span className="text-editor-text">Resume Export</span>
               </>
             ) : (
               <>
                 <PauseCircle className="mr-2 h-4 w-4" />
-                Pause Export
+                <span className="text-editor-text">Pause Export</span>
               </>
             )}
           </Button>
           <Button 
             onClick={onStopExport} 
             variant="destructive" 
-            className="w-full flex items-center justify-center text-white"
+            className="w-full flex items-center justify-center"
           >
             <StopCircle className="mr-2 h-4 w-4" />
-            Stop Export
+            <span className="text-white">Stop Export</span>
           </Button>
         </>
       )}

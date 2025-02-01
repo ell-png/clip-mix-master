@@ -27,7 +27,11 @@ const ExportProgress = ({
 
   return (
     <div className="mb-8 bg-editor-surface p-4 rounded-lg animate-fade-in">
-      <Progress value={exportProgress} className="h-2 bg-editor-accent" />
+      <Progress 
+        value={exportProgress} 
+        className="h-2 bg-editor-accent"
+        style={{ '--progress-value': `${exportProgress}%` } as React.CSSProperties}
+      />
       <div className="flex flex-col sm:flex-row sm:justify-between text-sm mt-2 space-y-2 sm:space-y-0">
         <p className="text-editor-text">
           Exporting combination {currentExportIndex + 1} of {selectedCombinations.length} ({Math.round(exportProgress)}%)

@@ -5,15 +5,22 @@ import { ExportOptions } from '@/types/video';
 let ffmpeg: FFmpeg | null = null;
 
 export const initFFmpeg = async () => {
-  if (!ffmpeg) {
-    ffmpeg = new FFmpeg();
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
+  try {
+    if (!ffmpeg) {
+      console.log('Initializing FFmpeg...');
+      ffmpeg = new FFmpeg();
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+      console.log('FFmpeg initialized successfully');
+    }
+    return ffmpeg;
+  } catch (error) {
+    console.error('Error initializing FFmpeg:', error);
+    throw new Error('Failed to initialize FFmpeg');
   }
-  return ffmpeg;
 };
 
 export const concatenateVideos = async (
@@ -26,6 +33,7 @@ export const concatenateVideos = async (
 ) => {
   try {
     console.log('Starting video concatenation...');
+    onProgress(5);
     
     // Write files to FFmpeg virtual filesystem
     console.log('Writing hook video...');
@@ -57,18 +65,21 @@ export const concatenateVideos = async (
     };
 
     console.log('Starting FFmpeg concatenation...');
-    await ffmpeg.exec([
+    const command = [
       '-f', 'concat',
       '-safe', '0',
       '-i', 'concat.txt',
       ...qualitySettings[options.quality].split(' '),
       ...speedSettings[options.speed].split(' '),
       'output.mp4'
-    ]);
+    ];
+    console.log('FFmpeg command:', command.join(' '));
+    
+    await ffmpeg.exec(command);
+    onProgress(80);
     
     console.log('Reading output file...');
     const data = await ffmpeg.readFile('output.mp4');
-    onProgress(80);
     
     const blob = new Blob([data], { type: 'video/mp4' });
     console.log('Video concatenation complete!');
@@ -85,11 +96,13 @@ export const concatenateVideos = async (
 
 const cleanupFiles = async (ffmpeg: FFmpeg) => {
   try {
+    console.log('Cleaning up temporary files...');
     await ffmpeg.deleteFile('hook.mp4');
     await ffmpeg.deleteFile('selling.mp4');
     await ffmpeg.deleteFile('cta.mp4');
     await ffmpeg.deleteFile('concat.txt');
     await ffmpeg.deleteFile('output.mp4');
+    console.log('Cleanup complete');
   } catch (error) {
     console.error('Error cleaning up files:', error);
   }
