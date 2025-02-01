@@ -7,7 +7,7 @@ interface VideoSectionProps {
   section: string;
   files: File[];
   onUpload: (section: string, file: File) => void;
-  onRename: (section: string, index: number) => void;
+  onRename: (section: string, index: number, newName: string) => void;
   onDelete: (section: string, index: number) => void;
   onMoveVideo: (fromSection: string, toSection: string, fileIndex: number) => void;
 }
@@ -63,7 +63,7 @@ const VideoSection = ({ section, files, onUpload, onRename, onDelete, onMoveVide
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onRename(section, index)}
+                  onClick={() => onRename(section, index, file.name)}
                 >
                   <Edit2 className="h-4 w-4" />
                 </Button>
