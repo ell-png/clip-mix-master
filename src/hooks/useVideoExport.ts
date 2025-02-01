@@ -3,7 +3,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL, fetchFile } from '@ffmpeg/util';
 
-let ffmpeg = null;
+let ffmpeg: FFmpeg | null = null;
 
 interface Combination {
   hook: File;
@@ -56,13 +56,15 @@ export const useVideoExport = (combinations: Combination[]) => {
   ) => {
     if (isPaused) return;
 
-    setCurrentCombination({
-      hook: combination.hook,
-      sellingPoint: combination.sellingPoint,
-      cta: combination.cta,
-    });
-
     try {
+      setCurrentCombination({
+        hook: combination.hook,
+        sellingPoint: combination.sellingPoint,
+        cta: combination.cta,
+      });
+
+      setExportProgress(0);
+
       if (!ffmpeg) {
         ffmpeg = new FFmpeg();
         const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
@@ -73,15 +75,18 @@ export const useVideoExport = (combinations: Combination[]) => {
       }
 
       // Write files to FFMPEG virtual filesystem
+      setExportProgress(10);
       await ffmpeg.writeFile('hook.mp4', await fetchFile(combination.hook));
+      setExportProgress(20);
       await ffmpeg.writeFile('selling.mp4', await fetchFile(combination.sellingPoint));
+      setExportProgress(30);
       await ffmpeg.writeFile('cta.mp4', await fetchFile(combination.cta));
 
       // Create a concat file
       const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
       await ffmpeg.writeFile('concat.txt', concat);
 
-      setExportProgress(33);
+      setExportProgress(40);
 
       // Concatenate videos
       await ffmpeg.exec([
@@ -92,12 +97,14 @@ export const useVideoExport = (combinations: Combination[]) => {
         'output.mp4'
       ]);
 
-      setExportProgress(66);
+      setExportProgress(70);
 
       // Read the result
       const data = await ffmpeg.readFile('output.mp4');
       const blob = new Blob([data], { type: 'video/mp4' });
       const url = URL.createObjectURL(blob);
+
+      setExportProgress(90);
 
       // Download the combined video
       const a = document.createElement('a');
@@ -108,14 +115,14 @@ export const useVideoExport = (combinations: Combination[]) => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      setExportProgress(100);
-
       // Clean up files
       await ffmpeg.deleteFile('hook.mp4');
       await ffmpeg.deleteFile('selling.mp4');
       await ffmpeg.deleteFile('cta.mp4');
       await ffmpeg.deleteFile('concat.txt');
       await ffmpeg.deleteFile('output.mp4');
+
+      setExportProgress(100);
 
       const updatedCombinations = combinations.map((c, i) => 
         i === index ? { ...c, exported: true } : c

@@ -6,7 +6,7 @@ import { Checkbox } from './ui/checkbox';
 interface ExportControlsProps {
   isExporting: boolean;
   isPaused: boolean;
-  combinations: Array<{ id: number; exported: boolean }>;
+  combinations: Array<{ id: number; hook: File; sellingPoint: File; cta: File; exported: boolean }>;
   selectedCombinations: number[];
   onSelectCombination: (id: number) => void;
   onStartExport: () => void;
@@ -40,7 +40,7 @@ const ExportControls = ({
               htmlFor={`combination-${combination.id}`}
               className="text-sm text-editor-text cursor-pointer"
             >
-              Combination {index + 1}
+              {combination.hook.name} → {combination.sellingPoint.name} → {combination.cta.name}
             </label>
           </div>
         ))}
@@ -59,20 +59,22 @@ const ExportControls = ({
         <>
           <Button onClick={onTogglePause} variant="outline" className="w-full">
             {isPaused ? (
-              <>
+              <div className="flex items-center">
                 <Play className="mr-2 h-4 w-4" />
                 Resume Export
-              </>
+              </div>
             ) : (
-              <>
+              <div className="flex items-center">
                 <PauseCircle className="mr-2 h-4 w-4" />
                 Pause Export
-              </>
+              </div>
             )}
           </Button>
           <Button onClick={onStopExport} variant="destructive" className="w-full">
-            <StopCircle className="mr-2 h-4 w-4" />
-            Stop Export
+            <div className="flex items-center">
+              <StopCircle className="mr-2 h-4 w-4" />
+              Stop Export
+            </div>
           </Button>
         </>
       )}
