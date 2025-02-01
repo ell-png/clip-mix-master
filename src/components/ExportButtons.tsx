@@ -29,6 +29,11 @@ const ExportButtons = ({
 }: ExportButtonsProps) => {
   const isAllSelected = selectedCount === totalCount && totalCount > 0;
 
+  const handleExportAll = () => {
+    console.log('Triggering export all with total combinations:', totalCount);
+    onExportAll();
+  };
+
   return (
     <div className="space-y-2">
       <Button
@@ -41,13 +46,13 @@ const ExportButtons = ({
       </Button>
 
       <Button
-        onClick={onExportAll}
+        onClick={handleExportAll}
         variant="outline"
-        disabled={isExporting}
+        disabled={isExporting || totalCount === 0}
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <Play className="mr-2 h-4 w-4" />
-        Export All Videos
+        Export All Videos ({totalCount})
       </Button>
 
       <Button
