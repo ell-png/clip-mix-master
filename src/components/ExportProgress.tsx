@@ -1,5 +1,6 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
+import { Clock } from 'lucide-react';
 
 interface ExportProgressProps {
   isExporting: boolean;
@@ -25,21 +26,26 @@ const ExportProgress = ({
     return `${minutes}m ${remainingSeconds}s`;
   };
 
+  const getEstimatedDownloadTime = () => {
+    if (timeRemaining === null) return 'Calculating...';
+    if (timeRemaining <= 0) return 'Download starting soon...';
+    return `Download begins in ${formatTimeRemaining(timeRemaining)}`;
+  };
+
   return (
     <div className="mb-8 bg-editor-surface p-4 rounded-lg animate-fade-in">
       <Progress 
         value={exportProgress} 
         className="h-2 bg-editor-accent"
       />
-      <div className="flex flex-col sm:flex-row sm:justify-between text-sm mt-2 space-y-2 sm:space-y-0">
-        <p className="text-editor-text">
+      <div className="flex flex-col space-y-2 mt-3">
+        <p className="text-editor-text text-sm">
           Exporting combination {currentExportIndex + 1} of {selectedCombinations.length} ({Math.round(exportProgress)}%)
         </p>
-        {timeRemaining !== null && timeRemaining > 0 && (
-          <p className="text-editor-highlight font-medium">
-            Time remaining: {formatTimeRemaining(timeRemaining)}
-          </p>
-        )}
+        <div className="flex items-center text-sm text-editor-highlight">
+          <Clock className="w-4 h-4 mr-2" />
+          <p>{getEstimatedDownloadTime()}</p>
+        </div>
       </div>
     </div>
   );
