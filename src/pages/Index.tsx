@@ -31,7 +31,7 @@ const Index = () => {
     sections,
     sectionOrder,
     handleUpload,
-    handleRename,
+    handleRename: sectionHandleRename,
     handleDelete,
     addSection,
     deleteSection,
@@ -118,9 +118,9 @@ const Index = () => {
     
     combinations.forEach((combination, index) => {
       const newName = `${newFileName}_${index + 1}`;
-      handleRename('hook', index, newName);
-      handleRename('sellingPoint', index, newName);
-      handleRename('cta', index, newName);
+      sectionHandleRename('hook', index, newName);
+      sectionHandleRename('sellingPoint', index, newName);
+      sectionHandleRename('cta', index, newName);
     });
     
     setIsRenameDialogOpen(false);
@@ -160,7 +160,7 @@ const Index = () => {
           sections={sections}
           sectionOrder={sectionOrder}
           onUpload={handleUpload}
-          onRename={handleRename}
+          onRename={sectionHandleRename}
           onDelete={handleDelete}
           onAddSectionClick={() => setIsAddSectionDialogOpen(true)}
           onDeleteSection={deleteSection}
