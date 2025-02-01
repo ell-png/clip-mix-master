@@ -22,10 +22,8 @@ export const initFFmpeg = async () => {
       if (!coreResponse.ok) {
         throw new Error(`Failed to fetch core.js: ${coreResponse.statusText}`);
       }
-      const coreURL = await toBlobURL(
-        await coreResponse.blob(),
-        'text/javascript'
-      );
+      const coreText = await coreResponse.text();
+      const coreURL = await toBlobURL(coreText, 'text/javascript');
       console.log('Core.js fetched successfully');
       
       console.log('Fetching core.wasm...');
@@ -33,10 +31,8 @@ export const initFFmpeg = async () => {
       if (!wasmResponse.ok) {
         throw new Error(`Failed to fetch core.wasm: ${wasmResponse.statusText}`);
       }
-      const wasmURL = await toBlobURL(
-        await wasmResponse.blob(),
-        'application/wasm'
-      );
+      const wasmText = await wasmResponse.text();
+      const wasmURL = await toBlobURL(wasmText, 'application/wasm');
       console.log('Core.wasm fetched successfully');
       
       console.log('Loading FFmpeg with URLs:', { coreURL, wasmURL });
