@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { initFFmpeg, concatenateVideos } from '@/utils/ffmpegUtils';
-import { VideoFile, VideoSelection, ExportProgress } from '@/types/video';
+import { VideoFile, VideoSelection, ExportProgress, ExportOptions } from '@/types/video';
 
 export const useVideoExport = (combinations: VideoFile[]) => {
   const { toast } = useToast();
@@ -72,14 +72,18 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         setExportProgress(prev => ({ ...prev, startTime: Date.now() }));
       }
 
-      // Optimize video processing by using lower quality settings for faster export
+      const exportOptions: ExportOptions = {
+        quality: 'medium',
+        speed: 'fast'
+      };
+
       const blob = await concatenateVideos(
         ffmpeg,
         combination.hook,
         combination.sellingPoint,
         combination.cta,
         updateProgress,
-        { quality: 'medium', speed: 'fast' } // Add quality/speed options
+        exportOptions
       );
 
       // Download the combined video

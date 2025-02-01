@@ -17,3 +17,8 @@ export interface ExportProgress {
   timeRemaining: number | null;
   startTime: number | null;
 }
+
+export interface ExportOptions {
+  quality: 'low' | 'medium' | 'high';
+  speed: 'slow' | 'medium' | 'fast';
+}
