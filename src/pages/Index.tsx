@@ -8,15 +8,15 @@ import { useToast } from '@/components/ui/use-toast';
 const Index = () => {
   const { toast } = useToast();
   const [sections, setSections] = useState({
-    hook: null as File | null,
-    sellingPoint: null as File | null,
-    cta: null as File | null,
+    hook: [] as File[],
+    sellingPoint: [] as File[],
+    cta: [] as File[],
   });
 
   const handleUpload = useCallback((section: keyof typeof sections, file: File) => {
     setSections(prev => ({
       ...prev,
-      [section]: file
+      [section]: [...prev[section], file]
     }));
     toast({
       title: "Video uploaded",
@@ -25,7 +25,12 @@ const Index = () => {
   }, [toast]);
 
   const handleRandomize = () => {
-    // In this version, we'll just show a toast
+    const randomSelection = {
+      hook: sections.hook[Math.floor(Math.random() * sections.hook.length)] || null,
+      sellingPoint: sections.sellingPoint[Math.floor(Math.random() * sections.sellingPoint.length)] || null,
+      cta: sections.cta[Math.floor(Math.random() * sections.cta.length)] || null,
+    };
+
     toast({
       title: "Clips randomized",
       description: "New sequence generated",
@@ -33,7 +38,6 @@ const Index = () => {
   };
 
   const handleExport = () => {
-    // In this version, we'll just show a toast
     toast({
       title: "Export started",
       description: "Your video will be ready soon",
@@ -47,16 +51,43 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 animate-slide-up">
           <div>
-            <h2 className="text-xl mb-4">Hook</h2>
+            <h2 className="text-xl mb-4">Hook ({sections.hook.length} clips)</h2>
             <VideoUploader section="hook" onUpload={(file) => handleUpload('hook', file)} />
+            {sections.hook.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {sections.hook.map((file, index) => (
+                  <div key={index} className="text-sm text-editor-muted truncate">
+                    {file.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div>
-            <h2 className="text-xl mb-4">Selling Point</h2>
+            <h2 className="text-xl mb-4">Selling Point ({sections.sellingPoint.length} clips)</h2>
             <VideoUploader section="selling-point" onUpload={(file) => handleUpload('sellingPoint', file)} />
+            {sections.sellingPoint.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {sections.sellingPoint.map((file, index) => (
+                  <div key={index} className="text-sm text-editor-muted truncate">
+                    {file.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div>
-            <h2 className="text-xl mb-4">CTA</h2>
+            <h2 className="text-xl mb-4">CTA ({sections.cta.length} clips)</h2>
             <VideoUploader section="cta" onUpload={(file) => handleUpload('cta', file)} />
+            {sections.cta.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {sections.cta.map((file, index) => (
+                  <div key={index} className="text-sm text-editor-muted truncate">
+                    {file.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

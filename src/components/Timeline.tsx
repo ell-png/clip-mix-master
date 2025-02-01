@@ -3,9 +3,9 @@ import { Video } from 'lucide-react';
 
 interface TimelineProps {
   sections: {
-    hook: File | null;
-    sellingPoint: File | null;
-    cta: File | null;
+    hook: File[];
+    sellingPoint: File[];
+    cta: File[];
   };
 }
 
@@ -13,16 +13,16 @@ const Timeline = ({ sections }: TimelineProps) => {
   return (
     <div className="bg-editor-surface p-4 rounded-lg">
       <div className="flex gap-2">
-        {Object.entries(sections).map(([section, file]) => (
+        {Object.entries(sections).map(([section, files]) => (
           <div
             key={section}
             className={`flex-1 h-20 rounded ${
-              file ? 'bg-editor-highlight' : 'bg-editor-accent'
+              files.length > 0 ? 'bg-editor-highlight' : 'bg-editor-accent'
             } p-2 transition-colors`}
           >
-            {file ? (
+            {files.length > 0 ? (
               <div className="flex items-center justify-center h-full">
-                <span className="text-white text-sm truncate">{file.name}</span>
+                <span className="text-white text-sm">{files.length} clips</span>
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
