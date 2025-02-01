@@ -217,7 +217,7 @@ const Index = () => {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Video Editor</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 group">
           {Object.entries(sections).map(([section, files]) => (
             <div key={section}>
               <h2 className="text-xl mb-4">{section} ({files.length} clips)</h2>
@@ -301,7 +301,11 @@ const Index = () => {
               </>
             )}
 
-            <Button onClick={handleRenameAll} variant="outline">
+            <Button 
+              onClick={handleRenameAll} 
+              variant="outline"
+              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
               <Edit3 className="mr-2 h-4 w-4" />
               Rename All
             </Button>
