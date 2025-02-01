@@ -38,23 +38,38 @@ export const initFFmpeg = async () => {
         await ffmpeg.load({
           coreURL,
           wasmURL,
+          progress: (progress) => {
+            console.log('FFmpeg loading progress:', progress);
+          }
         });
         console.log('FFmpeg load completed successfully');
       } catch (error) {
         console.error('Failed to load FFmpeg:', error);
         throw new Error(`Failed to load FFmpeg: ${error.message}`);
       }
+
+      // Wait a bit to ensure everything is properly initialized
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Verify FFmpeg is loaded and ready
+      if (!ffmpeg.loaded) {
+        console.error('FFmpeg not properly loaded after initialization');
+        throw new Error('FFmpeg failed to initialize properly');
+      }
+      
+      console.log('FFmpeg initialization completed successfully');
     } else {
       console.log('Reusing existing FFmpeg instance');
-    }
-    
-    if (!ffmpeg.loaded) {
-      throw new Error('FFmpeg failed to load properly');
+      if (!ffmpeg.loaded) {
+        console.error('Existing FFmpeg instance is not properly loaded');
+        throw new Error('Existing FFmpeg instance is not properly initialized');
+      }
     }
     
     return ffmpeg;
   } catch (error) {
     console.error('FFmpeg initialization error:', error);
+    ffmpeg = null; // Reset the instance on error
     throw new Error(`Failed to initialize FFmpeg: ${error.message || 'Unknown error occurred'}`);
   }
 };
@@ -68,10 +83,13 @@ export const concatenateVideos = async (
   options: ExportOptions
 ) => {
   try {
+    if (!ffmpeg || !ffmpeg.loaded) {
+      throw new Error('FFmpeg is not properly initialized');
+    }
+
     console.log('Starting concatenation process...');
     console.log('Writing files to FFmpeg filesystem...');
     
-    // Write files to FFmpeg virtual filesystem
     try {
       console.log('Writing hook video...');
       await ffmpeg.writeFile('hook.mp4', await fetchFile(hook));
@@ -92,7 +110,6 @@ export const concatenateVideos = async (
     const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
     await ffmpeg.writeFile('concat.txt', concat);
 
-    // Apply quality and speed settings
     const qualitySettings = {
       low: '-crf 28',
       medium: '-crf 23',
