@@ -14,6 +14,7 @@ interface ExportControlsProps {
   onTogglePause: () => void;
   onStopExport: () => void;
   onRenameAll: () => void;
+  onSelectAll: () => void;
 }
 
 const ExportControls = ({
@@ -26,6 +27,7 @@ const ExportControls = ({
   onTogglePause,
   onStopExport,
   onRenameAll,
+  onSelectAll,
 }: ExportControlsProps) => {
   return (
     <div className="flex flex-col gap-2">
@@ -46,6 +48,15 @@ const ExportControls = ({
           </div>
         ))}
       </div>
+
+      <Button
+        onClick={onSelectAll}
+        variant="outline"
+        className="w-full flex items-center justify-center mb-2"
+      >
+        <Play className="mr-2 h-4 w-4" />
+        <span>Select All Combinations</span>
+      </Button>
 
       <Button
         onClick={onStartExport}

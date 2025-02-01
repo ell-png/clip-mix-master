@@ -49,6 +49,7 @@ const Index = () => {
     stopExport,
     togglePause,
     startExport,
+    exportCombination,
   } = useVideoExport(combinations.filter(c => selectedCombinations.includes(c.id)));
 
   useEffect(() => {
@@ -79,6 +80,14 @@ const Index = () => {
         ? prev.filter(cId => cId !== id)
         : [...prev, id]
     );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCombinations.length === combinations.length) {
+      setSelectedCombinations([]);
+    } else {
+      setSelectedCombinations(combinations.map(c => c.id));
+    }
   };
 
   const handleRenameClick = (section: string, index: number) => {
@@ -161,6 +170,7 @@ const Index = () => {
             onTogglePause={togglePause}
             onStopExport={stopExport}
             onRenameAll={() => {}}
+            onSelectAll={handleSelectAll}
           />
         </div>
       </div>

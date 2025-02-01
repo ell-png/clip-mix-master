@@ -72,12 +72,14 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         setExportProgress(prev => ({ ...prev, startTime: Date.now() }));
       }
 
+      // Optimize video processing by using lower quality settings for faster export
       const blob = await concatenateVideos(
         ffmpeg,
         combination.hook,
         combination.sellingPoint,
         combination.cta,
-        updateProgress
+        updateProgress,
+        { quality: 'medium', speed: 'fast' } // Add quality/speed options
       );
 
       // Download the combined video
@@ -98,18 +100,19 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       
       onCombinationExported(updatedCombinations);
       
-      setTimeout(() => {
-        if (index < combinations.length - 1) {
-          setCurrentExportIndex(index + 1);
-          setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
-        } else {
-          setIsExporting(false);
-          toast({
-            title: "Export complete",
-            description: `Successfully exported ${combinations.length} video combinations`,
-          });
-        }
-      }, 1000);
+      // Add a small delay between exports to prevent overwhelming the browser
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (index < combinations.length - 1) {
+        setCurrentExportIndex(index + 1);
+        setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
+      } else {
+        setIsExporting(false);
+        toast({
+          title: "Export complete",
+          description: `Successfully exported ${combinations.length} video combinations`,
+        });
+      }
     } catch (error) {
       console.error('Export error:', error);
       toast({
