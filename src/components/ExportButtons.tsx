@@ -30,6 +30,10 @@ const ExportButtons = ({
   const isAllSelected = selectedCount === totalCount && totalCount > 0;
 
   const handleExportAll = () => {
+    if (totalCount === 0) {
+      console.log('No combinations available for export');
+      return;
+    }
     console.log('Triggering export all with total combinations:', totalCount);
     onExportAll();
   };
@@ -48,7 +52,7 @@ const ExportButtons = ({
       <Button
         onClick={handleExportAll}
         variant="outline"
-        disabled={isExporting || totalCount === 0}
+        disabled={isExporting}
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
         <Play className="mr-2 h-4 w-4" />
