@@ -1,28 +1,17 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL, fetchFile } from '@ffmpeg/util';
+import { initFFmpeg, concatenateVideos } from '@/utils/ffmpegUtils';
+import { VideoFile, VideoSelection, ExportProgress } from '@/types/video';
 
-let ffmpeg: FFmpeg | null = null;
-
-interface Combination {
-  hook: File;
-  sellingPoint: File;
-  cta: File;
-  exported: boolean;
-}
-
-interface VideoSelection {
-  hook: File | null;
-  sellingPoint: File | null;
-  cta: File | null;
-}
-
-export const useVideoExport = (combinations: Combination[]) => {
+export const useVideoExport = (combinations: VideoFile[]) => {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [exportProgress, setExportProgress] = useState(0);
+  const [exportProgress, setExportProgress] = useState<ExportProgress>({
+    percent: 0,
+    timeRemaining: null,
+    startTime: null,
+  });
   const [currentExportIndex, setCurrentExportIndex] = useState(0);
   const [currentCombination, setCurrentCombination] = useState<VideoSelection>({
     hook: null,
@@ -30,9 +19,23 @@ export const useVideoExport = (combinations: Combination[]) => {
     cta: null,
   });
 
+  const calculateTimeRemaining = (progress: number, startTime: number) => {
+    const elapsed = (Date.now() - startTime) / 1000; // seconds
+    const totalEstimate = (elapsed * 100) / progress;
+    return Math.max(0, totalEstimate - elapsed);
+  };
+
+  const updateProgress = (progress: number) => {
+    setExportProgress(prev => ({
+      percent: progress,
+      timeRemaining: prev.startTime ? calculateTimeRemaining(progress, prev.startTime) : null,
+      startTime: prev.startTime,
+    }));
+  };
+
   const stopExport = useCallback(() => {
     setIsExporting(false);
-    setExportProgress(0);
+    setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
     setCurrentExportIndex(0);
     setIsPaused(false);
     toast({
@@ -50,9 +53,9 @@ export const useVideoExport = (combinations: Combination[]) => {
   }, [isPaused, toast]);
 
   const exportCombination = useCallback(async (
-    combination: Combination,
+    combination: VideoFile,
     index: number,
-    onCombinationExported: (combinations: Combination[]) => void
+    onCombinationExported: (combinations: VideoFile[]) => void
   ) => {
     if (isPaused) return;
 
@@ -63,50 +66,22 @@ export const useVideoExport = (combinations: Combination[]) => {
         cta: combination.cta,
       });
 
-      setExportProgress(0);
-
-      if (!ffmpeg) {
-        ffmpeg = new FFmpeg();
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
-        await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
+      const ffmpeg = await initFFmpeg();
+      
+      if (!exportProgress.startTime) {
+        setExportProgress(prev => ({ ...prev, startTime: Date.now() }));
       }
 
-      // Write files to FFMPEG virtual filesystem
-      setExportProgress(10);
-      await ffmpeg.writeFile('hook.mp4', await fetchFile(combination.hook));
-      setExportProgress(20);
-      await ffmpeg.writeFile('selling.mp4', await fetchFile(combination.sellingPoint));
-      setExportProgress(30);
-      await ffmpeg.writeFile('cta.mp4', await fetchFile(combination.cta));
-
-      // Create a concat file
-      const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
-      await ffmpeg.writeFile('concat.txt', concat);
-
-      setExportProgress(40);
-
-      // Concatenate videos
-      await ffmpeg.exec([
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', 'concat.txt',
-        '-c', 'copy',
-        'output.mp4'
-      ]);
-
-      setExportProgress(70);
-
-      // Read the result
-      const data = await ffmpeg.readFile('output.mp4');
-      const blob = new Blob([data], { type: 'video/mp4' });
-      const url = URL.createObjectURL(blob);
-
-      setExportProgress(90);
+      const blob = await concatenateVideos(
+        ffmpeg,
+        combination.hook,
+        combination.sellingPoint,
+        combination.cta,
+        updateProgress
+      );
 
       // Download the combined video
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `combined_video_${index + 1}.mp4`;
@@ -115,14 +90,7 @@ export const useVideoExport = (combinations: Combination[]) => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      // Clean up files
-      await ffmpeg.deleteFile('hook.mp4');
-      await ffmpeg.deleteFile('selling.mp4');
-      await ffmpeg.deleteFile('cta.mp4');
-      await ffmpeg.deleteFile('concat.txt');
-      await ffmpeg.deleteFile('output.mp4');
-
-      setExportProgress(100);
+      updateProgress(100);
 
       const updatedCombinations = combinations.map((c, i) => 
         i === index ? { ...c, exported: true } : c
@@ -133,7 +101,7 @@ export const useVideoExport = (combinations: Combination[]) => {
       setTimeout(() => {
         if (index < combinations.length - 1) {
           setCurrentExportIndex(index + 1);
-          setExportProgress(0);
+          setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
         } else {
           setIsExporting(false);
           toast({
@@ -151,7 +119,7 @@ export const useVideoExport = (combinations: Combination[]) => {
       });
       setIsExporting(false);
     }
-  }, [combinations.length, isPaused, toast]);
+  }, [combinations.length, isPaused, toast, exportProgress.startTime]);
 
   const startExport = useCallback(() => {
     if (combinations.length === 0) {
@@ -165,13 +133,14 @@ export const useVideoExport = (combinations: Combination[]) => {
 
     setIsExporting(true);
     setCurrentExportIndex(0);
-    setExportProgress(0);
+    setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
   }, [combinations.length, toast]);
 
   return {
     isExporting,
     isPaused,
-    exportProgress,
+    exportProgress: exportProgress.percent,
+    timeRemaining: exportProgress.timeRemaining,
     currentExportIndex,
     currentCombination,
     stopExport,

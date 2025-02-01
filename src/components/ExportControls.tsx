@@ -2,11 +2,12 @@ import React from 'react';
 import { Button } from './ui/button';
 import { Play, PauseCircle, StopCircle, Edit3 } from 'lucide-react';
 import { Checkbox } from './ui/checkbox';
+import { VideoFile } from '@/types/video';
 
 interface ExportControlsProps {
   isExporting: boolean;
   isPaused: boolean;
-  combinations: Array<{ id: number; hook: File; sellingPoint: File; cta: File; exported: boolean }>;
+  combinations: VideoFile[];
   selectedCombinations: number[];
   onSelectCombination: (id: number) => void;
   onStartExport: () => void;
@@ -29,7 +30,7 @@ const ExportControls = ({
   return (
     <div className="flex flex-col gap-2">
       <div className="max-h-60 overflow-y-auto mb-4 bg-editor-surface p-4 rounded-lg">
-        {combinations.map((combination, index) => (
+        {combinations.map((combination) => (
           <div key={combination.id} className="flex items-center space-x-2 mb-2">
             <Checkbox
               id={`combination-${combination.id}`}
@@ -49,32 +50,38 @@ const ExportControls = ({
       <Button
         onClick={onStartExport}
         disabled={isExporting || selectedCombinations.length === 0}
-        className="bg-editor-highlight hover:bg-editor-highlight/90 text-white"
+        className="bg-editor-highlight hover:bg-editor-highlight/90 text-white w-full flex items-center justify-center"
       >
         <Play className="mr-2 h-4 w-4" />
-        Export Selected ({selectedCombinations.length})
+        <span>Export Selected ({selectedCombinations.length})</span>
       </Button>
 
       {isExporting && (
         <>
-          <Button onClick={onTogglePause} variant="outline" className="w-full">
+          <Button 
+            onClick={onTogglePause} 
+            variant="outline" 
+            className="w-full flex items-center justify-center"
+          >
             {isPaused ? (
-              <div className="flex items-center">
+              <>
                 <Play className="mr-2 h-4 w-4" />
-                Resume Export
-              </div>
+                <span>Resume Export</span>
+              </>
             ) : (
-              <div className="flex items-center">
+              <>
                 <PauseCircle className="mr-2 h-4 w-4" />
-                Pause Export
-              </div>
+                <span>Pause Export</span>
+              </>
             )}
           </Button>
-          <Button onClick={onStopExport} variant="destructive" className="w-full">
-            <div className="flex items-center">
-              <StopCircle className="mr-2 h-4 w-4" />
-              Stop Export
-            </div>
+          <Button 
+            onClick={onStopExport} 
+            variant="destructive" 
+            className="w-full flex items-center justify-center"
+          >
+            <StopCircle className="mr-2 h-4 w-4" />
+            <span>Stop Export</span>
           </Button>
         </>
       )}
@@ -82,7 +89,7 @@ const ExportControls = ({
       <Button 
         onClick={onRenameAll} 
         variant="outline"
-        className="w-full flex items-center"
+        className="w-full flex items-center justify-center"
       >
         <Edit3 className="mr-2 h-4 w-4" />
         <span>Rename All</span>
