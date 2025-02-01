@@ -20,28 +20,38 @@ export const useVideoExport = (combinations: VideoFile[]) => {
   });
   const ffmpegInstanceRef = useRef<any>(null);
   const isExportingRef = useRef(false);
+  const startTimeRef = useRef<number | null>(null);
 
-  const calculateTimeRemaining = (progress: number, startTime: number) => {
-    if (progress <= 0) return null;
-    const elapsed = (Date.now() - startTime) / 1000;
+  const calculateTimeRemaining = useCallback((progress: number) => {
+    if (!startTimeRef.current || progress <= 0) return null;
+    const elapsed = (Date.now() - startTimeRef.current) / 1000;
     const totalEstimate = (elapsed * 100) / progress;
     return Math.max(0, totalEstimate - elapsed);
-  };
-
-  const updateProgress = useCallback((progress: number) => {
-    setExportProgress(prev => ({
-      percent: progress,
-      timeRemaining: prev.startTime ? calculateTimeRemaining(progress, prev.startTime) : null,
-      startTime: prev.startTime || Date.now(),
-    }));
   }, []);
 
+  const updateProgress = useCallback((progress: number) => {
+    if (!startTimeRef.current) {
+      startTimeRef.current = Date.now();
+    }
+    
+    const timeRemaining = calculateTimeRemaining(progress);
+    console.log('Progress update:', { progress, timeRemaining });
+    
+    setExportProgress({
+      percent: progress,
+      timeRemaining,
+      startTime: startTimeRef.current,
+    });
+  }, [calculateTimeRemaining]);
+
   const stopExport = useCallback(() => {
+    console.log('Stopping export process');
     isExportingRef.current = false;
     setIsExporting(false);
     setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
     setCurrentExportIndex(0);
     setIsPaused(false);
+    startTimeRef.current = null;
     toast({
       title: "Export stopped",
       description: "Video export process has been stopped",
@@ -72,7 +82,6 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         cta: combination.cta,
       });
 
-      // Initialize FFmpeg if needed
       if (!ffmpegInstanceRef.current) {
         console.log('Initializing FFmpeg...');
         const instance = await initFFmpeg();
@@ -86,7 +95,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         threads: navigator.hardwareConcurrency || 4
       };
 
-      console.log('Starting video concatenation process...');
+      console.log('Starting video concatenation...');
       const blob = await concatenateVideos(
         ffmpegInstanceRef.current,
         combination.hook,
@@ -106,6 +115,8 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      console.log('Export completed for combination:', index + 1);
+
       const updatedCombinations = combinations.map((c, i) => 
         i === index ? { ...c, exported: true } : c
       );
@@ -115,9 +126,12 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       if (index < combinations.length - 1) {
         setCurrentExportIndex(index + 1);
         setExportProgress(prev => ({ ...prev, percent: 0 }));
+        startTimeRef.current = null;
       } else {
+        console.log('All exports completed');
         isExportingRef.current = false;
         setIsExporting(false);
+        startTimeRef.current = null;
         toast({
           title: "Export complete",
           description: `Successfully exported ${combinations.length} video combinations`,
@@ -128,6 +142,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       console.error('Export error:', error);
       isExportingRef.current = false;
       setIsExporting(false);
+      startTimeRef.current = null;
       toast({
         title: "Export failed",
         description: error.message || "There was an error exporting the videos",
@@ -156,11 +171,13 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       isExportingRef.current = true;
       setIsExporting(true);
       setCurrentExportIndex(0);
-      setExportProgress({ percent: 0, timeRemaining: null, startTime: Date.now() });
+      startTimeRef.current = Date.now();
+      setExportProgress({ percent: 0, timeRemaining: null, startTime: startTimeRef.current });
     } catch (error) {
       console.error('Export initialization error:', error);
       isExportingRef.current = false;
       setIsExporting(false);
+      startTimeRef.current = null;
       toast({
         title: "Export failed",
         description: error.message || "Failed to initialize video processing",
