@@ -1,7 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import VideoUploader from '@/components/VideoUploader';
-import { Button } from '@/components/ui/button';
-import { Play, Download, StopCircle, PauseCircle, Edit2, Edit3 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
@@ -12,6 +9,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from '@/components/ui/button';
+import VideoSection from '@/components/VideoSection';
+import ExportControls from '@/components/ExportControls';
+import CombinationsList from '@/components/CombinationsList';
 
 interface VideoSelection {
   hook: File | null;
@@ -218,30 +219,13 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 group">
           {Object.entries(sections).map(([section, files]) => (
-            <div key={section}>
-              <h2 className="text-xl mb-4">{section} ({files.length} clips)</h2>
-              <VideoUploader 
-                section={section as 'hook' | 'selling-point' | 'cta'} 
-                onUpload={(file) => handleUpload(section as keyof typeof sections, file)} 
-              />
-              {files.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm text-editor-muted">
-                      <span className="truncate flex-1">{file.name}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRename(section, index)}
-                        className="ml-2"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <VideoSection
+              key={section}
+              section={section}
+              files={files}
+              onUpload={handleUpload}
+              onRename={handleRename}
+            />
           ))}
         </div>
 
@@ -255,55 +239,16 @@ const Index = () => {
         )}
 
         <div className="flex justify-between items-start gap-4">
-          <div className="flex-1 bg-editor-surface p-4 rounded-lg">
-            <h3 className="text-lg mb-4">All Combinations ({combinations.length})</h3>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {combinations.map((combo, index) => (
-                <div 
-                  key={index} 
-                  className={`text-sm p-2 rounded ${
-                    combo.exported ? 'bg-editor-accent text-editor-muted' : 'bg-editor-bg'
-                  }`}
-                >
-                  {combo.hook.name} → {combo.sellingPoint.name} → {combo.cta.name}
-                  {combo.exported && ' (Exported)'}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={startExport}
-              disabled={isExporting || combinations.length === 0}
-              className="bg-editor-highlight hover:bg-editor-highlight/90 text-white"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Export All Combinations
-            </Button>
-
-            {isExporting && (
-              <>
-                <Button onClick={togglePause} variant="outline">
-                  <PauseCircle className="mr-2 h-4 w-4" />
-                  {isPaused ? 'Resume' : 'Pause'}
-                </Button>
-                <Button onClick={stopExport} variant="destructive">
-                  <StopCircle className="mr-2 h-4 w-4" />
-                  Stop Export
-                </Button>
-              </>
-            )}
-
-            <Button 
-              onClick={handleRenameAll} 
-              variant="outline"
-              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-            >
-              <Edit3 className="mr-2 h-4 w-4" />
-              Rename All
-            </Button>
-          </div>
+          <CombinationsList combinations={combinations} />
+          <ExportControls
+            isExporting={isExporting}
+            isPaused={isPaused}
+            combinationsLength={combinations.length}
+            onStartExport={startExport}
+            onTogglePause={togglePause}
+            onStopExport={stopExport}
+            onRenameAll={handleRenameAll}
+          />
         </div>
       </div>
 
