@@ -1,11 +1,10 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL } from '@ffmpeg/util';
 
 let ffmpeg: FFmpeg | null = null;
 
 export const initFFmpeg = async () => {
   try {
-    // Create new instance only if one doesn't exist or isn't loaded
+    // Create new instance only if one doesn't exist
     if (!ffmpeg) {
       console.log('Creating new FFmpeg instance...');
       ffmpeg = new FFmpeg();
@@ -13,32 +12,11 @@ export const initFFmpeg = async () => {
 
     // If FFmpeg exists but isn't loaded, load it
     if (!ffmpeg.loaded) {
-      console.log('Loading FFmpeg with core files...');
-      // Using jsDelivr CDN instead of unpkg
-      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.4/dist';
+      console.log('Loading FFmpeg...');
       
-      console.log('Fetching core.js...');
-      const coreResponse = await fetch(`${baseURL}/ffmpeg-core.js`);
-      if (!coreResponse.ok) {
-        throw new Error(`Failed to fetch core.js: ${coreResponse.statusText}`);
-      }
-      const coreText = await coreResponse.text();
-      const coreURL = await toBlobURL(coreText, 'text/javascript');
-      console.log('Core.js fetched successfully');
-      
-      console.log('Fetching core.wasm...');
-      const wasmResponse = await fetch(`${baseURL}/ffmpeg-core.wasm`);
-      if (!wasmResponse.ok) {
-        throw new Error(`Failed to fetch core.wasm: ${wasmResponse.statusText}`);
-      }
-      const wasmText = await wasmResponse.text();
-      const wasmURL = await toBlobURL(wasmText, 'application/wasm');
-      console.log('Core.wasm fetched successfully');
-      
-      console.log('Loading FFmpeg with URLs:', { coreURL, wasmURL });
       await ffmpeg.load({
-        coreURL,
-        wasmURL
+        coreURL: '/ffmpeg-core.js',
+        wasmURL: '/ffmpeg-core.wasm'
       });
 
       // Add a small delay to ensure loading is complete
