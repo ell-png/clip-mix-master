@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import VideoUploader from '@/components/VideoUploader';
-import Timeline from '@/components/Timeline';
 import { Button } from '@/components/ui/button';
 import { Play, Download, StopCircle, PauseCircle, Edit2, Edit3 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -244,11 +243,6 @@ const Index = () => {
               )}
             </div>
           ))}
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-xl mb-4">Timeline</h2>
-          <Timeline sections={sections} currentSelection={currentCombination} />
         </div>
 
         {isExporting && (
