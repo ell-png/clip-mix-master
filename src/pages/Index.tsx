@@ -6,7 +6,7 @@ import DialogManager from '@/components/DialogManager';
 import ExportControls from '@/components/ExportControls';
 import CombinationsList from '@/components/CombinationsList';
 import ExportProgress from '@/components/ExportProgress';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface Combination {
   id: number;
@@ -55,7 +55,9 @@ const Index = () => {
   useEffect(() => {
     let id = 0;
     const newCombinations: Combination[] = [];
-    if (sections.hook && sections.sellingPoint && sections.cta) {
+    
+    // Check if all required sections have videos
+    if (sections.hook?.length && sections.sellingPoint?.length && sections.cta?.length) {
       sections.hook.forEach(hook => {
         sections.sellingPoint.forEach(sellingPoint => {
           sections.cta.forEach(cta => {
@@ -93,11 +95,13 @@ const Index = () => {
     if (combinations.length === 0) {
       toast({
         title: "No combinations available",
-        description: "Please add videos to create combinations first.",
+        description: "Please upload at least one video to each section",
         variant: "destructive"
       });
       return;
     }
+    // Select all combinations and start export
+    setSelectedCombinations(combinations.map(c => c.id));
     startExport();
   };
 
