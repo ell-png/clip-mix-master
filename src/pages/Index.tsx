@@ -25,6 +25,7 @@ const Index = () => {
   const [isSectionRenameDialogOpen, setIsSectionRenameDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [newSectionName, setNewSectionName] = useState('');
+  const [selectedSection, setSelectedSection] = useState('');
 
   const {
     sections,
@@ -130,6 +131,11 @@ const Index = () => {
     });
   };
 
+  const handleSectionRenameClick = (section: string) => {
+    setSelectedSection(section);
+    setIsSectionRenameDialogOpen(true);
+  };
+
   const handleAddSection = () => {
     if (newSectionName) {
       addSection(newSectionName);
@@ -138,10 +144,11 @@ const Index = () => {
     }
   };
 
-  const handleSectionRename = (oldName: string, newName: string) => {
-    if (newName) {
-      renameSection(oldName, newName);
+  const handleSectionRename = () => {
+    if (newSectionName && selectedSection) {
+      renameSection(selectedSection, newSectionName);
       setNewSectionName('');
+      setSelectedSection('');
       setIsSectionRenameDialogOpen(false);
     }
   };
@@ -157,8 +164,12 @@ const Index = () => {
           onDelete={handleDelete}
           onAddSectionClick={() => setIsAddSectionDialogOpen(true)}
           onDeleteSection={deleteSection}
-          onSectionRename={handleSectionRename}
+          onSectionRename={handleSectionRenameClick}
+          onDragStart={() => {}}
+          onDragOver={() => {}}
+          onDragEnd={() => {}}
           onMoveVideo={moveVideo}
+          draggedSection={null}
         />
 
         <ExportProgress
