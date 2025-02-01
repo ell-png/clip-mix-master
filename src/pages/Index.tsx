@@ -126,6 +126,11 @@ const Index = () => {
     }
   };
 
+  const handleExportAll = () => {
+    setSelectedCombinations(combinations.map(c => c.id));
+    startExport();
+  };
+
   return (
     <div className="min-h-screen bg-editor-bg text-editor-text p-8">
       <div className="max-w-6xl mx-auto">
@@ -167,6 +172,7 @@ const Index = () => {
             selectedCombinations={selectedCombinations}
             onSelectCombination={handleSelectCombination}
             onStartExport={startExport}
+            onExportAll={handleExportAll}
             onTogglePause={togglePause}
             onStopExport={stopExport}
             onRenameAll={() => {}}

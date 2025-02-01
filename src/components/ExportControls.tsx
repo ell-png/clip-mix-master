@@ -14,6 +14,7 @@ interface ExportControlsProps {
   onStopExport: () => void;
   onRenameAll: () => void;
   onSelectAll: () => void;
+  onExportAll: () => void;
 }
 
 const ExportControls = ({
@@ -27,6 +28,7 @@ const ExportControls = ({
   onStopExport,
   onRenameAll,
   onSelectAll,
+  onExportAll,
 }: ExportControlsProps) => {
   return (
     <div className="flex flex-col gap-2">
@@ -41,6 +43,7 @@ const ExportControls = ({
         selectedCount={selectedCombinations.length}
         onSelectAll={onSelectAll}
         onStartExport={onStartExport}
+        onExportAll={onExportAll}
         onTogglePause={onTogglePause}
         onStopExport={onStopExport}
         onRenameAll={onRenameAll}

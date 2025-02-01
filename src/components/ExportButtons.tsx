@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from './ui/button';
-import { Play, PauseCircle, StopCircle, Edit3 } from 'lucide-react';
+import { Play, PauseCircle, StopCircle, Edit3, CheckSquare } from 'lucide-react';
 
 interface ExportButtonsProps {
   isExporting: boolean;
@@ -8,6 +8,7 @@ interface ExportButtonsProps {
   selectedCount: number;
   onSelectAll: () => void;
   onStartExport: () => void;
+  onExportAll: () => void;
   onTogglePause: () => void;
   onStopExport: () => void;
   onRenameAll: () => void;
@@ -19,6 +20,7 @@ const ExportButtons = ({
   selectedCount,
   onSelectAll,
   onStartExport,
+  onExportAll,
   onTogglePause,
   onStopExport,
   onRenameAll,
@@ -27,6 +29,15 @@ const ExportButtons = ({
     <div className="space-y-2">
       <Button
         onClick={onSelectAll}
+        variant="outline"
+        className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
+      >
+        <CheckSquare className="mr-2 h-4 w-4" />
+        Select All
+      </Button>
+
+      <Button
+        onClick={onExportAll}
         variant="outline"
         className="w-full flex items-center justify-center bg-editor-surface text-editor-text hover:bg-editor-accent hover:text-editor-text"
       >
