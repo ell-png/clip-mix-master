@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+
+const ffmpeg = createFFmpeg({ log: true });
 
 interface Combination {
   hook: File;
@@ -30,6 +33,7 @@ export const useVideoExport = (combinations: Combination[]) => {
     setIsExporting(false);
     setExportProgress(0);
     setCurrentExportIndex(0);
+    setIsPaused(false);
     toast({
       title: "Export stopped",
       description: "Video export process has been stopped",
@@ -45,8 +49,8 @@ export const useVideoExport = (combinations: Combination[]) => {
   }, [isPaused, toast]);
 
   const exportCombination = useCallback(async (
-    combination: Combination, 
-    index: number, 
+    combination: Combination,
+    index: number,
     onCombinationExported: (combinations: Combination[]) => void
   ) => {
     if (isPaused) return;
@@ -58,32 +62,59 @@ export const useVideoExport = (combinations: Combination[]) => {
     });
 
     try {
-      const downloadFile = async (file: File, prefix: string) => {
-        const url = URL.createObjectURL(file);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${prefix}_${file.name}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      };
+      if (!ffmpeg.isLoaded()) {
+        await ffmpeg.load();
+      }
 
-      await downloadFile(combination.hook, 'hook');
+      // Write files to FFMPEG virtual filesystem
+      ffmpeg.FS('writeFile', 'hook.mp4', await fetchFile(combination.hook));
+      ffmpeg.FS('writeFile', 'selling.mp4', await fetchFile(combination.sellingPoint));
+      ffmpeg.FS('writeFile', 'cta.mp4', await fetchFile(combination.cta));
+
+      // Create a concat file
+      const concat = 'file hook.mp4\nfile selling.mp4\nfile cta.mp4';
+      ffmpeg.FS('writeFile', 'concat.txt', concat);
+
       setExportProgress(33);
-      
-      await downloadFile(combination.sellingPoint, 'selling_point');
+
+      // Concatenate videos
+      await ffmpeg.run(
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', 'concat.txt',
+        '-c', 'copy',
+        'output.mp4'
+      );
+
       setExportProgress(66);
-      
-      await downloadFile(combination.cta, 'cta');
+
+      // Read the result
+      const data = ffmpeg.FS('readFile', 'output.mp4');
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+
+      // Download the combined video
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `combined_video_${index + 1}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
       setExportProgress(100);
 
-      // Create a new array with the updated combination
+      // Clean up FFMPEG filesystem
+      ffmpeg.FS('unlink', 'hook.mp4');
+      ffmpeg.FS('unlink', 'selling.mp4');
+      ffmpeg.FS('unlink', 'cta.mp4');
+      ffmpeg.FS('unlink', 'concat.txt');
+      ffmpeg.FS('unlink', 'output.mp4');
+
       const updatedCombinations = combinations.map((c, i) => 
         i === index ? { ...c, exported: true } : c
       );
       
-      // Pass the new array to the callback
       onCombinationExported(updatedCombinations);
       
       setTimeout(() => {

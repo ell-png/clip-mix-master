@@ -2,9 +2,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface VideoSections {
-  hook: File[];
-  sellingPoint: File[];
-  cta: File[];
+  [key: string]: File[];
 }
 
 export const useVideoSections = () => {
@@ -15,7 +13,7 @@ export const useVideoSections = () => {
     cta: [],
   });
 
-  const handleUpload = useCallback((section: keyof VideoSections, file: File) => {
+  const handleUpload = useCallback((section: string, file: File) => {
     setSections(prev => ({
       ...prev,
       [section]: [...prev[section], file]
@@ -26,7 +24,7 @@ export const useVideoSections = () => {
     });
   }, [toast]);
 
-  const handleRename = useCallback((section: keyof VideoSections, index: number, newName: string) => {
+  const handleRename = useCallback((section: string, index: number, newName: string) => {
     setSections(prev => {
       const newSections = { ...prev };
       const file = newSections[section][index];
@@ -38,22 +36,37 @@ export const useVideoSections = () => {
     });
   }, []);
 
-  const handleRenameAll = useCallback(() => {
+  const handleDelete = useCallback((section: string, index: number) => {
+    setSections(prev => ({
+      ...prev,
+      [section]: prev[section].filter((_, i) => i !== index)
+    }));
+    toast({
+      title: "Video deleted",
+      description: `Removed from ${section} section`,
+    });
+  }, [toast]);
+
+  const addSection = useCallback((sectionName: string) => {
+    setSections(prev => ({
+      ...prev,
+      [sectionName]: []
+    }));
+    toast({
+      title: "Section added",
+      description: `Added new section: ${sectionName}`,
+    });
+  }, [toast]);
+
+  const deleteSection = useCallback((sectionName: string) => {
     setSections(prev => {
       const newSections = { ...prev };
-      Object.keys(newSections).forEach(section => {
-        newSections[section as keyof VideoSections] = newSections[section as keyof VideoSections].map((file: File, index: number) => {
-          const newFile = new File([file], `${section}_${index + 1}${file.name.substring(file.name.lastIndexOf('.'))}`, {
-            type: file.type,
-          });
-          return newFile;
-        });
-      });
+      delete newSections[sectionName];
       return newSections;
     });
     toast({
-      title: "Files renamed",
-      description: "All files have been renamed with sequential numbers",
+      title: "Section deleted",
+      description: `Deleted section: ${sectionName}`,
     });
   }, [toast]);
 
@@ -61,6 +74,8 @@ export const useVideoSections = () => {
     sections,
     handleUpload,
     handleRename,
-    handleRenameAll
+    handleDelete,
+    addSection,
+    deleteSection
   };
 };
