@@ -43,6 +43,7 @@ const Index = () => {
     isExporting,
     isPaused,
     exportProgress,
+    timeRemaining,
     currentExportIndex,
     stopExport,
     togglePause,
@@ -143,6 +144,7 @@ const Index = () => {
           exportProgress={exportProgress}
           currentExportIndex={currentExportIndex}
           selectedCombinations={selectedCombinations}
+          timeRemaining={timeRemaining}
         />
 
         <div className="flex justify-between items-start gap-4">
