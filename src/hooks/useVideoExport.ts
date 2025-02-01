@@ -89,7 +89,9 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
       const exportOptions: ExportOptions = {
         quality: 'medium',
-        speed: 'fast'
+        speed: 'fast',
+        preset: 'ultrafast',
+        threads: navigator.hardwareConcurrency || 4
       };
 
       console.log('Starting video concatenation process...');
@@ -134,6 +136,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
           description: `Successfully exported ${combinations.length} video combinations`,
         });
       }
+
     } catch (error) {
       console.error('Export error:', error);
       toast({
