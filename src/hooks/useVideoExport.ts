@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { initFFmpeg, concatenateVideos } from '@/utils/ffmpegUtils';
 import { VideoFile, VideoSelection, ExportProgress, ExportOptions } from '@/types/video';
 
@@ -18,23 +18,26 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     sellingPoint: null,
     cta: null,
   });
-  const [ffmpegInstance, setFfmpegInstance] = useState<any>(null);
+  const ffmpegInstanceRef = useRef<any>(null);
+  const isExportingRef = useRef(false);
 
   const calculateTimeRemaining = (progress: number, startTime: number) => {
+    if (progress <= 0) return null;
     const elapsed = (Date.now() - startTime) / 1000;
     const totalEstimate = (elapsed * 100) / progress;
     return Math.max(0, totalEstimate - elapsed);
   };
 
-  const updateProgress = (progress: number) => {
+  const updateProgress = useCallback((progress: number) => {
     setExportProgress(prev => ({
       percent: progress,
       timeRemaining: prev.startTime ? calculateTimeRemaining(progress, prev.startTime) : null,
-      startTime: prev.startTime,
+      startTime: prev.startTime || Date.now(),
     }));
-  };
+  }, []);
 
   const stopExport = useCallback(() => {
+    isExportingRef.current = false;
     setIsExporting(false);
     setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
     setCurrentExportIndex(0);
@@ -46,7 +49,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
   }, [toast]);
 
   const togglePause = useCallback(() => {
-    setIsPaused(!isPaused);
+    setIsPaused(prev => !prev);
     toast({
       title: isPaused ? "Export resumed" : "Export paused",
       description: isPaused ? "Continuing video export" : "Video export has been paused",
@@ -58,7 +61,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
     index: number,
     onCombinationExported: (combinations: VideoFile[]) => void
   ) => {
-    if (isPaused || !isExporting) return;
+    if (isPaused || !isExportingRef.current) return;
 
     try {
       console.log('Starting export for combination:', index + 1);
@@ -70,15 +73,10 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       });
 
       // Initialize FFmpeg if needed
-      if (!ffmpegInstance) {
+      if (!ffmpegInstanceRef.current) {
         console.log('Initializing FFmpeg...');
         const instance = await initFFmpeg();
-        console.log('FFmpeg initialized successfully');
-        setFfmpegInstance(instance);
-      }
-
-      if (!exportProgress.startTime) {
-        setExportProgress(prev => ({ ...prev, startTime: Date.now() }));
+        ffmpegInstanceRef.current = instance;
       }
 
       const exportOptions: ExportOptions = {
@@ -90,7 +88,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
       console.log('Starting video concatenation process...');
       const blob = await concatenateVideos(
-        ffmpegInstance,
+        ffmpegInstanceRef.current,
         combination.hook,
         combination.sellingPoint,
         combination.cta,
@@ -98,7 +96,7 @@ export const useVideoExport = (combinations: VideoFile[]) => {
         exportOptions
       );
 
-      console.log('Creating download link...');
+      // Create and trigger download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -108,22 +106,17 @@ export const useVideoExport = (combinations: VideoFile[]) => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      updateProgress(100);
-
       const updatedCombinations = combinations.map((c, i) => 
         i === index ? { ...c, exported: true } : c
       );
       
       onCombinationExported(updatedCombinations);
       
-      console.log('Export completed for combination:', index + 1);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       if (index < combinations.length - 1) {
         setCurrentExportIndex(index + 1);
-        setExportProgress({ percent: 0, timeRemaining: null, startTime: null });
+        setExportProgress(prev => ({ ...prev, percent: 0 }));
       } else {
+        isExportingRef.current = false;
         setIsExporting(false);
         toast({
           title: "Export complete",
@@ -133,17 +126,23 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
     } catch (error) {
       console.error('Export error:', error);
+      isExportingRef.current = false;
+      setIsExporting(false);
       toast({
         title: "Export failed",
         description: error.message || "There was an error exporting the videos",
         variant: "destructive",
       });
-      setIsExporting(false);
     }
-  }, [combinations.length, isPaused, isExporting, ffmpegInstance, toast, exportProgress.startTime]);
+  }, [combinations, isPaused, toast, updateProgress]);
 
   const startExport = useCallback(async () => {
-    if (combinations.length === 0) {
+    if (isExportingRef.current) {
+      console.log('Export already in progress');
+      return;
+    }
+
+    if (!combinations || combinations.length === 0) {
       toast({
         title: "No combinations available",
         description: "Please upload at least one video to each section",
@@ -154,34 +153,27 @@ export const useVideoExport = (combinations: VideoFile[]) => {
 
     try {
       console.log('Starting export process...');
+      isExportingRef.current = true;
       setIsExporting(true);
       setCurrentExportIndex(0);
       setExportProgress({ percent: 0, timeRemaining: null, startTime: Date.now() });
-      
-      // Initialize FFmpeg if needed
-      if (!ffmpegInstance) {
-        console.log('Initializing FFmpeg before export...');
-        const instance = await initFFmpeg();
-        console.log('FFmpeg initialized successfully');
-        setFfmpegInstance(instance);
-      }
     } catch (error) {
       console.error('Export initialization error:', error);
+      isExportingRef.current = false;
+      setIsExporting(false);
       toast({
         title: "Export failed",
         description: error.message || "Failed to initialize video processing",
         variant: "destructive",
       });
-      setIsExporting(false);
     }
-  }, [combinations.length, toast, ffmpegInstance]);
+  }, [combinations, toast]);
 
   useEffect(() => {
     if (isExporting && !isPaused && combinations.length > 0) {
       const selectedCombination = combinations[currentExportIndex];
       if (selectedCombination) {
         exportCombination(selectedCombination, currentExportIndex, (updatedCombinations) => {
-          // Handle the updated combinations if needed
           console.log('Combination exported successfully');
         });
       }
