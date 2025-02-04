@@ -21,12 +21,21 @@ export const initFFmpeg = async () => {
       });
 
       // Load FFmpeg with blob URLs
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
-      });
+      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+      console.log('Attempting to load FFmpeg from:', baseURL);
+      
+      try {
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+        });
+        
+        console.log('FFmpeg files loaded successfully');
+      } catch (loadError) {
+        console.error('Error loading FFmpeg files:', loadError);
+        throw new Error(`Failed to load FFmpeg files: ${loadError.message}`);
+      }
 
       // Add a small delay to ensure loading is complete
       await new Promise(resolve => setTimeout(resolve, 1000));
